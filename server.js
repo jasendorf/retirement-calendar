@@ -89,6 +89,32 @@ app.get('/api/expenses', async (req, res) => {
   }
 });
 
+app.put('/api/expenses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, amount, day_of_month, annual_increase_rate } = req.body;
+    
+    if (!name || !amount || !day_of_month) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    if (day_of_month < 1 || day_of_month > 31) {
+      return res.status(400).json({ error: 'Day of month must be between 1 and 31' });
+    }
+    
+    const expense = await database.updateExpense(
+      id,
+      name,
+      amount,
+      day_of_month,
+      annual_increase_rate || 0
+    );
+    res.json(expense);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.delete('/api/expenses/:id', async (req, res) => {
   try {
     await database.deleteExpense(req.params.id);
@@ -121,6 +147,32 @@ app.post('/api/income', async (req, res) => {
 app.get('/api/income', async (req, res) => {
   try {
     const income = await database.getAllIncome();
+    res.json(income);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/income/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, amount, day_of_month, annual_increase_rate } = req.body;
+    
+    if (!name || !amount || !day_of_month) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    if (day_of_month < 1 || day_of_month > 31) {
+      return res.status(400).json({ error: 'Day of month must be between 1 and 31' });
+    }
+    
+    const income = await database.updateIncome(
+      id,
+      name,
+      amount,
+      day_of_month,
+      annual_increase_rate || 0
+    );
     res.json(income);
   } catch (error) {
     res.status(500).json({ error: error.message });

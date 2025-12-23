@@ -333,6 +333,15 @@ input[type="date"]:focus {
     background: #0b5ed7;
 }
 
+.btn-compact.btn-warning {
+    background: #ffc107;
+    color: #000;
+}
+
+.btn-compact.btn-warning:hover {
+    background: #ffca2c;
+}
+
 .btn-icon {
     padding: 2px 8px;
     font-size: 18px;
@@ -346,6 +355,21 @@ input[type="date"]:focus {
 .btn-icon:hover {
     color: #bb2d3b;
     background: #f8d7da;
+}
+
+.btn-edit {
+    padding: 2px 8px;
+    font-size: 13px;
+    background: transparent;
+    border: none;
+    color: #0d6efd;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-edit:hover {
+    color: #0b5ed7;
+    background: #cfe2ff;
 }
 
 .config-display {
