@@ -140,6 +140,19 @@ class Database {
     });
   }
 
+  updateExpense(id, name, amount, dayOfMonth, annualIncreaseRate) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'UPDATE expenses SET name = ?, amount = ?, day_of_month = ?, annual_increase_rate = ? WHERE id = ?',
+        [name, amount, dayOfMonth, annualIncreaseRate || 0, id],
+        function(err) {
+          if (err) reject(err);
+          else resolve({ id, name, amount, day_of_month: dayOfMonth, annual_increase_rate: annualIncreaseRate });
+        }
+      );
+    });
+  }
+
   // Income operations
   addIncome(name, amount, dayOfMonth, annualIncreaseRate = 0) {
     return new Promise((resolve, reject) => {
@@ -169,6 +182,19 @@ class Database {
         if (err) reject(err);
         else resolve();
       });
+    });
+  }
+
+  updateIncome(id, name, amount, dayOfMonth, annualIncreaseRate) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'UPDATE income SET name = ?, amount = ?, day_of_month = ?, annual_increase_rate = ? WHERE id = ?',
+        [name, amount, dayOfMonth, annualIncreaseRate || 0, id],
+        function(err) {
+          if (err) reject(err);
+          else resolve({ id, name, amount, day_of_month: dayOfMonth, annual_increase_rate: annualIncreaseRate });
+        }
+      );
     });
   }
 

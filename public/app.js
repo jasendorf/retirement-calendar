@@ -1,5 +1,9 @@
 const API_BASE = window.location.origin;
 
+// Track which item is being edited
+let editingExpenseId = null;
+let editingIncomeId = null;
+
 // Load initial data when page loads
 document.addEventListener('DOMContentLoaded', () => {
     loadAllData();
@@ -182,24 +186,32 @@ async function addIncome() {
     }
     
     try {
-        const response = await fetch(`${API_BASE}/api/income`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, amount, day_of_month, annual_increase_rate })
-        });
+        let response;
+        
+        // If editing, use PUT; otherwise use POST
+        if (editingIncomeId) {
+            response = await fetch(`${API_BASE}/api/income/${editingIncomeId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, amount, day_of_month, annual_increase_rate })
+            });
+        } else {
+            response = await fetch(`${API_BASE}/api/income`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, amount, day_of_month, annual_increase_rate })
+            });
+        }
         
         if (response.ok) {
             await loadIncome();
-            document.getElementById('income-name').value = '';
-            document.getElementById('income-amount').value = '';
-            document.getElementById('income-day').value = '';
-            document.getElementById('income-inflation').value = '0';
+            cancelEditIncome(); // Clear form and reset state
         } else {
             const error = await response.json();
             alert(`Error: ${error.error}`);
         }
     } catch (error) {
-        alert(`Error adding income: ${error.message}`);
+        alert(`Error saving income: ${error.message}`);
     }
 }
 
@@ -223,7 +235,7 @@ async function loadIncome() {
                         <th class="amount">Amount</th>
                         <th>Day</th>
                         <th>Inflation</th>
-                        <th style="width: 60px;">Actions</th>
+                        <th style="width: 80px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -233,7 +245,10 @@ async function loadIncome() {
                             <td class="amount credit">$${formatNumber(income.amount)}</td>
                             <td>${income.day_of_month}</td>
                             <td>${income.annual_increase_rate ? income.annual_increase_rate.toFixed(1) + '%' : '-'}</td>
-                            <td><button class="btn-icon" onclick="deleteIncome(${income.id})" title="Delete">×</button></td>
+                            <td>
+                                <button class="btn-edit" onclick="editIncome(${income.id})" title="Edit">Edit</button>
+                                <button class="btn-icon" onclick="deleteIncome(${income.id})" title="Delete">×</button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -264,6 +279,55 @@ async function deleteIncome(id) {
     }
 }
 
+// Edit income - populate form with existing values
+function editIncome(id) {
+    fetch(`${API_BASE}/api/income`)
+        .then(response => response.json())
+        .then(incomeList => {
+            const income = incomeList.find(i => i.id === id);
+            if (!income) {
+                alert('Income not found');
+                return;
+            }
+            
+            // Populate the form
+            document.getElementById('income-name').value = income.name;
+            document.getElementById('income-amount').value = income.amount;
+            document.getElementById('income-day').value = income.day_of_month;
+            document.getElementById('income-inflation').value = income.annual_increase_rate || 0;
+            
+            // Change button text and track editing state
+            editingIncomeId = id;
+            const button = document.querySelector('.input-row button.btn-compact');
+            if (button && button.onclick.toString().includes('addIncome')) {
+                button.textContent = 'Update Income';
+                button.classList.add('btn-warning');
+            }
+            
+            // Scroll to form
+            document.getElementById('income-name').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('income-name').focus();
+        })
+        .catch(error => {
+            alert(`Error loading income: ${error.message}`);
+        });
+}
+
+// Cancel edit - reset form
+function cancelEditIncome() {
+    editingIncomeId = null;
+    document.getElementById('income-name').value = '';
+    document.getElementById('income-amount').value = '';
+    document.getElementById('income-day').value = '';
+    document.getElementById('income-inflation').value = '0';
+    
+    const button = document.querySelector('.input-row button.btn-compact');
+    if (button && button.textContent === 'Update Income') {
+        button.textContent = 'Add Income';
+        button.classList.remove('btn-warning');
+    }
+}
+
 // Expense functions
 async function addExpense() {
     const name = document.getElementById('expense-name').value.trim();
@@ -287,24 +351,32 @@ async function addExpense() {
     }
     
     try {
-        const response = await fetch(`${API_BASE}/api/expenses`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, amount, day_of_month, annual_increase_rate })
-        });
+        let response;
+        
+        // If editing, use PUT; otherwise use POST
+        if (editingExpenseId) {
+            response = await fetch(`${API_BASE}/api/expenses/${editingExpenseId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, amount, day_of_month, annual_increase_rate })
+            });
+        } else {
+            response = await fetch(`${API_BASE}/api/expenses`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, amount, day_of_month, annual_increase_rate })
+            });
+        }
         
         if (response.ok) {
             await loadExpenses();
-            document.getElementById('expense-name').value = '';
-            document.getElementById('expense-amount').value = '';
-            document.getElementById('expense-day').value = '';
-            document.getElementById('expense-inflation').value = '0';
+            cancelEditExpense(); // Clear form and reset state
         } else {
             const error = await response.json();
             alert(`Error: ${error.error}`);
         }
     } catch (error) {
-        alert(`Error adding expense: ${error.message}`);
+        alert(`Error saving expense: ${error.message}`);
     }
 }
 
@@ -328,7 +400,7 @@ async function loadExpenses() {
                         <th class="amount">Amount</th>
                         <th>Day</th>
                         <th>Inflation</th>
-                        <th style="width: 60px;">Actions</th>
+                        <th style="width: 80px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -338,7 +410,10 @@ async function loadExpenses() {
                             <td class="amount debit">${formatAccountingNumber(expense.amount, true)}</td>
                             <td>${expense.day_of_month}</td>
                             <td>${expense.annual_increase_rate ? expense.annual_increase_rate.toFixed(1) + '%' : '-'}</td>
-                            <td><button class="btn-icon" onclick="deleteExpense(${expense.id})" title="Delete">×</button></td>
+                            <td>
+                                <button class="btn-edit" onclick="editExpense(${expense.id})" title="Edit">Edit</button>
+                                <button class="btn-icon" onclick="deleteExpense(${expense.id})" title="Delete">×</button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -366,6 +441,61 @@ async function deleteExpense(id) {
         }
     } catch (error) {
         alert(`Error deleting expense: ${error.message}`);
+    }
+}
+
+// Edit expense - populate form with existing values
+function editExpense(id) {
+    fetch(`${API_BASE}/api/expenses`)
+        .then(response => response.json())
+        .then(expenses => {
+            const expense = expenses.find(e => e.id === id);
+            if (!expense) {
+                alert('Expense not found');
+                return;
+            }
+            
+            // Populate the form
+            document.getElementById('expense-name').value = expense.name;
+            document.getElementById('expense-amount').value = expense.amount;
+            document.getElementById('expense-day').value = expense.day_of_month;
+            document.getElementById('expense-inflation').value = expense.annual_increase_rate || 0;
+            
+            // Change button text and track editing state
+            editingExpenseId = id;
+            const buttons = document.querySelectorAll('.input-row button.btn-compact');
+            for (let button of buttons) {
+                if (button.onclick.toString().includes('addExpense')) {
+                    button.textContent = 'Update Expense';
+                    button.classList.add('btn-warning');
+                    break;
+                }
+            }
+            
+            // Scroll to form
+            document.getElementById('expense-name').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('expense-name').focus();
+        })
+        .catch(error => {
+            alert(`Error loading expense: ${error.message}`);
+        });
+}
+
+// Cancel edit - reset form
+function cancelEditExpense() {
+    editingExpenseId = null;
+    document.getElementById('expense-name').value = '';
+    document.getElementById('expense-amount').value = '';
+    document.getElementById('expense-day').value = '';
+    document.getElementById('expense-inflation').value = '0';
+    
+    const buttons = document.querySelectorAll('.input-row button.btn-compact');
+    for (let button of buttons) {
+        if (button.textContent === 'Update Expense') {
+            button.textContent = 'Add Expense';
+            button.classList.remove('btn-warning');
+            break;
+        }
     }
 }
 
