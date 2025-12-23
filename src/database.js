@@ -60,6 +60,18 @@ class Database {
             total_amount REAL NOT NULL,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
+        `);
+
+        // Table for account configuration
+        this.db.run(`
+          CREATE TABLE IF NOT EXISTS account_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            checking_balance REAL NOT NULL DEFAULT 0,
+            savings_balance REAL NOT NULL DEFAULT 0,
+            transfer_frequency_days INTEGER NOT NULL DEFAULT 30,
+            min_checking_balance REAL NOT NULL DEFAULT 0,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
         `, (err) => {
           if (err) {
             reject(err);
@@ -172,6 +184,64 @@ class Database {
       this.db.get('SELECT * FROM savings ORDER BY id DESC LIMIT 1', (err, row) => {
         if (err) reject(err);
         else resolve(row || { total_amount: 0 });
+      });
+    });
+  }
+
+  // Account configuration operations
+  setAccountConfig(checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance) {
+    return new Promise((resolve, reject) => {
+      // First, check if a config record exists
+      this.db.get('SELECT * FROM account_config WHERE id = 1', (err, row) => {
+        if (err) {
+          reject(err);
+        } else if (row) {
+          // Update existing record
+          this.db.run(
+            `UPDATE account_config 
+             SET checking_balance = ?, savings_balance = ?, transfer_frequency_days = ?, 
+                 min_checking_balance = ?, updated_at = CURRENT_TIMESTAMP 
+             WHERE id = 1`,
+            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance],
+            (err) => {
+              if (err) reject(err);
+              else resolve({
+                id: 1,
+                checking_balance: checkingBalance,
+                savings_balance: savingsBalance,
+                transfer_frequency_days: transferFrequencyDays,
+                min_checking_balance: minCheckingBalance
+              });
+            }
+          );
+        } else {
+          // Insert new record with id=1
+          this.db.run(
+            `INSERT INTO account_config 
+             (id, checking_balance, savings_balance, transfer_frequency_days, min_checking_balance) 
+             VALUES (1, ?, ?, ?, ?)`,
+            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance],
+            function(err) {
+              if (err) reject(err);
+              else resolve({
+                id: 1,
+                checking_balance: checkingBalance,
+                savings_balance: savingsBalance,
+                transfer_frequency_days: transferFrequencyDays,
+                min_checking_balance: minCheckingBalance
+              });
+            }
+          );
+        }
+      });
+    });
+  }
+
+  getAccountConfig() {
+    return new Promise((resolve, reject) => {
+      this.db.get('SELECT * FROM account_config WHERE id = 1', (err, row) => {
+        if (err) reject(err);
+        else resolve(row || null);
       });
     });
   }

@@ -7,12 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Load all data
 async function loadAllData() {
-    await loadSavings();
+    await loadAccountConfig();
     await loadIncome();
     await loadExpenses();
 }
 
-// Savings functions
+// Savings functions (kept for backward compatibility)
 async function updateSavings() {
     const amount = parseFloat(document.getElementById('savings-amount').value);
     
@@ -46,9 +46,88 @@ async function loadSavings() {
         const savings = await response.json();
         
         const display = document.getElementById('current-savings');
-        display.innerHTML = `Current Savings: $${formatNumber(savings.total_amount || 0)}`;
+        if (display) {
+            display.innerHTML = `Current Savings: $${formatNumber(savings.total_amount || 0)}`;
+        }
     } catch (error) {
         console.error('Error loading savings:', error);
+    }
+}
+
+// Account configuration functions
+async function updateAccountConfig() {
+    const checkingBalance = parseFloat(document.getElementById('checking-balance').value);
+    const savingsBalance = parseFloat(document.getElementById('savings-balance').value);
+    const transferFrequencyDays = parseInt(document.getElementById('transfer-frequency').value);
+    const minCheckingBalance = parseFloat(document.getElementById('min-checking').value);
+    
+    if (isNaN(checkingBalance) || isNaN(savingsBalance)) {
+        alert('Please enter valid account balances');
+        return;
+    }
+    
+    if (isNaN(transferFrequencyDays) || transferFrequencyDays < 1) {
+        alert('Please enter a valid transfer frequency (minimum 1 day)');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/account-config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                checkingBalance,
+                savingsBalance,
+                transferFrequencyDays,
+                minCheckingBalance: isNaN(minCheckingBalance) ? 0 : minCheckingBalance
+            })
+        });
+        
+        if (response.ok) {
+            await loadAccountConfig();
+            alert('Account configuration updated successfully');
+        } else {
+            const error = await response.json();
+            alert(`Error: ${error.error}`);
+        }
+    } catch (error) {
+        alert(`Error updating account config: ${error.message}`);
+    }
+}
+
+async function loadAccountConfig() {
+    try {
+        const response = await fetch(`${API_BASE}/api/account-config`);
+        const config = await response.json();
+        
+        // Populate form fields
+        document.getElementById('checking-balance').value = config?.checking_balance || 0;
+        document.getElementById('savings-balance').value = config?.savings_balance || 0;
+        document.getElementById('transfer-frequency').value = config?.transfer_frequency_days || 30;
+        document.getElementById('min-checking').value = config?.min_checking_balance || 0;
+        
+        // Display current balances
+        const display = document.getElementById('current-balances');
+        if (config) {
+            display.innerHTML = `
+                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                    <strong>Current Configuration:</strong><br>
+                    Checking: $${formatNumber(config.checking_balance || 0)}<br>
+                    Savings: $${formatNumber(config.savings_balance || 0)}<br>
+                    Transfer Frequency: ${config.transfer_frequency_days || 30} days<br>
+                    Min Checking Balance: $${formatNumber(config.min_checking_balance || 0)}
+                </div>
+            `;
+        } else {
+            display.innerHTML = `
+                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                    <strong>No configuration set</strong><br>
+                    Please enter your account balances above
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading account config:', error);
     }
 }
 
@@ -258,7 +337,7 @@ function displayForecastSummary(summary) {
             <div class="alert alert-warning">
                 ⚠️ <strong>Warning:</strong> Your monthly expenses exceed your income by 
                 $${formatNumber(Math.abs(summary.monthlyNetCashFlow))}. 
-                You will need to make withdrawals from savings.
+                You may need transfers from savings to checking.
             </div>
         `;
     }
@@ -277,8 +356,12 @@ function displayForecastSummary(summary) {
         ${warningHtml}
         <div class="summary-grid">
             <div class="summary-item">
-                <div class="summary-label">Starting Savings</div>
-                <div class="summary-value">$${formatNumber(summary.startingSavings)}</div>
+                <div class="summary-label">Starting Checking Balance</div>
+                <div class="summary-value">$${formatNumber(summary.startingCheckingBalance || 0)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Starting Savings Balance</div>
+                <div class="summary-value">$${formatNumber(summary.startingSavingsBalance || 0)}</div>
             </div>
             <div class="summary-item summary-positive">
                 <div class="summary-label">Total Income (${summary.monthsForecasted} months)</div>
@@ -293,12 +376,16 @@ function displayForecastSummary(summary) {
                 <div class="summary-value">$${formatNumber(summary.monthlyNetCashFlow)}</div>
             </div>
             <div class="summary-item summary-warning">
-                <div class="summary-label">Total Withdrawals Needed</div>
-                <div class="summary-value">$${formatNumber(summary.totalWithdrawals)}</div>
+                <div class="summary-label">Total Transfers from Savings</div>
+                <div class="summary-value">$${formatNumber(summary.totalTransfers || 0)}</div>
             </div>
-            <div class="summary-item ${summary.savingsRemaining > 0 ? 'summary-positive' : 'summary-negative'}">
-                <div class="summary-label">Savings Remaining</div>
-                <div class="summary-value">$${formatNumber(summary.savingsRemaining)}</div>
+            <div class="summary-item">
+                <div class="summary-label">Ending Checking Balance</div>
+                <div class="summary-value">$${formatNumber(summary.endingCheckingBalance || 0)}</div>
+            </div>
+            <div class="summary-item ${(summary.endingSavingsBalance || 0) > 0 ? 'summary-positive' : 'summary-negative'}">
+                <div class="summary-label">Ending Savings Balance</div>
+                <div class="summary-value">$${formatNumber(summary.endingSavingsBalance || 0)}</div>
             </div>
         </div>
     `;
@@ -307,23 +394,26 @@ function displayForecastSummary(summary) {
 function displayForecastEvents(events) {
     const tbody = document.getElementById('events-tbody');
     
-    tbody.innerHTML = events.map(event => `
-        <tr ${event.withdrawal > 0 ? 'class="withdrawal-highlight"' : ''}>
-            <td>${formatDate(event.date)}</td>
-            <td class="${event.type === 'income' ? 'type-income' : 'type-expense'}">
-                ${event.type.charAt(0).toUpperCase() + event.type.slice(1)}
-            </td>
-            <td>${escapeHtml(event.name)}</td>
-            <td class="${event.amount >= 0 ? 'amount-positive' : 'amount-negative'}">
-                $${formatNumber(event.amount)}
-            </td>
-            <td>$${formatNumber(event.balanceAfter)}</td>
-            <td>${event.withdrawal > 0 ? '$' + formatNumber(event.withdrawal) : '-'}</td>
-            <td class="${event.savingsRemaining < 0 ? 'amount-negative' : ''}">
-                $${formatNumber(event.savingsRemaining)}
-            </td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = events.map(event => {
+        const isTransfer = event.transferAmount && event.transferAmount > 0;
+        const rowClass = isTransfer ? 'class="withdrawal-highlight"' : '';
+        
+        return `
+            <tr ${rowClass}>
+                <td>${formatDate(event.date)}</td>
+                <td class="${event.type === 'income' ? 'type-income' : 'type-expense'}">
+                    ${event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                </td>
+                <td>${escapeHtml(event.name)}</td>
+                <td class="${event.amount >= 0 ? 'amount-positive' : 'amount-negative'}">
+                    $${formatNumber(event.amount)}
+                </td>
+                <td>$${formatNumber(event.checkingBalanceAfter || 0)}</td>
+                <td>$${formatNumber(event.savingsBalanceAfter || 0)}</td>
+                <td>${isTransfer ? '$' + formatNumber(event.transferAmount) : '-'}</td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // Utility functions

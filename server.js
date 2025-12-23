@@ -40,11 +40,18 @@ app.get('/api/data', async (req, res) => {
     const expenses = await database.getAllExpenses();
     const income = await database.getAllIncome();
     const savings = await database.getSavings();
+    const accountConfig = await database.getAccountConfig();
     
     res.json({
       expenses,
       income,
-      savings: savings.total_amount || 0
+      savings: savings.total_amount || 0,
+      accountConfig: accountConfig ? {
+        checkingBalance: accountConfig.checking_balance || 0,
+        savingsBalance: accountConfig.savings_balance || 0,
+        transferFrequencyDays: accountConfig.transfer_frequency_days || 30,
+        minCheckingBalance: accountConfig.min_checking_balance || 0
+      } : null
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -152,6 +159,36 @@ app.get('/api/savings', async (req, res) => {
   }
 });
 
+// Account configuration routes
+app.post('/api/account-config', async (req, res) => {
+  try {
+    const { checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance } = req.body;
+    
+    if (checkingBalance === undefined || savingsBalance === undefined) {
+      return res.status(400).json({ error: 'Checking and savings balances are required' });
+    }
+    
+    const config = await database.setAccountConfig(
+      checkingBalance,
+      savingsBalance,
+      transferFrequencyDays || 30,
+      minCheckingBalance || 0
+    );
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/account-config', async (req, res) => {
+  try {
+    const config = await database.getAccountConfig();
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Forecast route
 app.get('/api/forecast', async (req, res) => {
   try {
@@ -163,12 +200,27 @@ app.get('/api/forecast', async (req, res) => {
     
     const expenses = await database.getAllExpenses();
     const income = await database.getAllIncome();
-    const savings = await database.getSavings();
+    const accountConfig = await database.getAccountConfig();
+    
+    // Use new account config if available, otherwise fall back to old savings
+    let forecastConfig;
+    if (accountConfig) {
+      forecastConfig = {
+        checkingBalance: accountConfig.checking_balance || 0,
+        savingsBalance: accountConfig.savings_balance || 0,
+        transferFrequencyDays: accountConfig.transfer_frequency_days || 30,
+        minCheckingBalance: accountConfig.min_checking_balance || 0
+      };
+    } else {
+      // Fallback to old savings model for backward compatibility
+      const savings = await database.getSavings();
+      forecastConfig = savings.total_amount || 0;
+    }
     
     const forecast = generateForecast(
       expenses,
       income,
-      savings.total_amount || 0,
+      forecastConfig,
       monthsToForecast
     );
     

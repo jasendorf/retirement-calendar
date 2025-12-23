@@ -17,13 +17,23 @@
             <!-- Input Section -->
             <section class="input-section">
                 <div class="card">
-                    <h2>📊 Current Savings</h2>
+                    <h2>🏦 Account Balances</h2>
                     <div class="form-group">
-                        <label for="savings-amount">Total Savings ($)</label>
-                        <input type="number" id="savings-amount" placeholder="Enter total savings" step="0.01">
-                        <button onclick="updateSavings()" class="btn btn-primary">Update Savings</button>
+                        <label for="checking-balance">Checking Account Balance ($)</label>
+                        <input type="number" id="checking-balance" placeholder="Enter checking balance" step="0.01">
+                        
+                        <label for="savings-balance">Savings Account Balance ($)</label>
+                        <input type="number" id="savings-balance" placeholder="Enter savings balance" step="0.01">
+                        
+                        <label for="transfer-frequency">Transfer Frequency (days)</label>
+                        <input type="number" id="transfer-frequency" placeholder="30" min="1" value="30">
+                        
+                        <label for="min-checking">Minimum Checking Balance ($)</label>
+                        <input type="number" id="min-checking" placeholder="0.00" step="0.01" value="0">
+                        
+                        <button onclick="updateAccountConfig()" class="btn btn-primary">Update Account Config</button>
                     </div>
-                    <div id="current-savings" class="savings-display"></div>
+                    <div id="current-balances" class="savings-display"></div>
                 </div>
 
                 <div class="card">
@@ -87,9 +97,9 @@
                                     <th>Type</th>
                                     <th>Description</th>
                                     <th>Amount</th>
-                                    <th>Balance After</th>
-                                    <th>Withdrawal</th>
-                                    <th>Savings Remaining</th>
+                                    <th>Checking Balance After</th>
+                                    <th>Savings Balance After</th>
+                                    <th>Transfer Amount</th>
                                 </tr>
                             </thead>
                             <tbody id="events-tbody"></tbody>
