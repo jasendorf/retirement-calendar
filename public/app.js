@@ -12,6 +12,19 @@ async function loadAllData() {
     await loadExpenses();
 }
 
+// Format numbers with proper accounting style
+function formatAccountingNumber(num, isDebit = false) {
+    const formatted = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(Math.abs(num));
+    
+    if (isDebit || num < 0) {
+        return `(${formatted})`;
+    }
+    return formatted;
+}
+
 // Savings functions (kept for backward compatibility)
 async function updateSavings() {
     const amount = parseFloat(document.getElementById('savings-amount').value);
@@ -118,22 +131,14 @@ async function loadAccountConfig() {
         const display = document.getElementById('current-balances');
         if (config) {
             display.innerHTML = `
-                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
-                    <strong>Current Configuration:</strong><br>
-                    Checking: $${formatNumber(config.checking_balance || 0)}<br>
-                    Savings: $${formatNumber(config.savings_balance || 0)}<br>
-                    Annual Return Rate: ${(config.annual_return_rate || 0).toFixed(1)}%<br>
-                    Transfer Frequency: ${config.transfer_frequency_days || 30} days<br>
-                    Min Checking Balance: $${formatNumber(config.min_checking_balance || 0)}
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                    <div><strong>Checking:</strong> $${formatNumber(config.checking_balance || 0)}</div>
+                    <div><strong>Savings:</strong> $${formatNumber(config.savings_balance || 0)}</div>
+                    <div><strong>Return Rate:</strong> ${(config.annual_return_rate || 0).toFixed(1)}%</div>
                 </div>
             `;
         } else {
-            display.innerHTML = `
-                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
-                    <strong>No configuration set</strong><br>
-                    Please enter your account balances above
-                </div>
-            `;
+            display.innerHTML = `<div style="color: #6c757d;">No configuration set</div>`;
         }
     } catch (error) {
         console.error('Error loading account config:', error);
@@ -185,21 +190,32 @@ async function loadIncome() {
         const container = document.getElementById('income-list');
         
         if (incomeList.length === 0) {
-            container.innerHTML = '<p style="color: #999; text-align: center;">No income added yet</p>';
+            container.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 12px; font-size: 12px;">No income added yet</p>';
             return;
         }
         
-        container.innerHTML = incomeList.map(income => `
-            <div class="list-item income">
-                <div class="list-item-info">
-                    <div class="list-item-name">${escapeHtml(income.name)}</div>
-                    <div class="list-item-details">
-                        $${formatNumber(income.amount)} on day ${income.day_of_month} of each month
-                    </div>
-                </div>
-                <button class="btn btn-delete" onclick="deleteIncome(${income.id})">Delete</button>
-            </div>
-        `).join('');
+        container.innerHTML = `
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th class="amount">Amount</th>
+                        <th>Day</th>
+                        <th style="width: 60px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${incomeList.map(income => `
+                        <tr>
+                            <td>${escapeHtml(income.name)}</td>
+                            <td class="amount credit">$${formatNumber(income.amount)}</td>
+                            <td>${income.day_of_month}</td>
+                            <td><button class="btn-icon" onclick="deleteIncome(${income.id})" title="Delete">×</button></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
     } catch (error) {
         console.error('Error loading income:', error);
     }
@@ -270,21 +286,32 @@ async function loadExpenses() {
         const container = document.getElementById('expense-list');
         
         if (expenseList.length === 0) {
-            container.innerHTML = '<p style="color: #999; text-align: center;">No expenses added yet</p>';
+            container.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 12px; font-size: 12px;">No expenses added yet</p>';
             return;
         }
         
-        container.innerHTML = expenseList.map(expense => `
-            <div class="list-item expense">
-                <div class="list-item-info">
-                    <div class="list-item-name">${escapeHtml(expense.name)}</div>
-                    <div class="list-item-details">
-                        $${formatNumber(expense.amount)} on day ${expense.day_of_month} of each month
-                    </div>
-                </div>
-                <button class="btn btn-delete" onclick="deleteExpense(${expense.id})">Delete</button>
-            </div>
-        `).join('');
+        container.innerHTML = `
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th class="amount">Amount</th>
+                        <th>Day</th>
+                        <th style="width: 60px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${expenseList.map(expense => `
+                        <tr>
+                            <td>${escapeHtml(expense.name)}</td>
+                            <td class="amount debit">${formatAccountingNumber(expense.amount, true)}</td>
+                            <td>${expense.day_of_month}</td>
+                            <td><button class="btn-icon" onclick="deleteExpense(${expense.id})" title="Delete">×</button></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
     } catch (error) {
         console.error('Error loading expenses:', error);
     }
@@ -340,87 +367,92 @@ async function generateForecast() {
 function displayForecastSummary(summary) {
     const container = document.getElementById('summary-content');
     
-    let warningHtml = '';
+    let alertsHtml = '';
     if (summary.monthlyNetCashFlow < 0) {
-        warningHtml = `
+        alertsHtml += `
             <div class="alert alert-warning">
-                ⚠️ <strong>Warning:</strong> Your monthly expenses exceed your income by 
+                <strong>Warning:</strong> Your monthly expenses exceed your income by 
                 $${formatNumber(Math.abs(summary.monthlyNetCashFlow))}. 
-                You may need transfers from savings to checking.
+                Transfers from savings to checking will be needed.
             </div>
         `;
     }
     
     if (summary.savingsDepletionMonth) {
-        warningHtml += `
+        alertsHtml += `
             <div class="alert alert-danger">
-                🚨 <strong>Critical:</strong> Your savings are projected to be depleted by 
+                <strong>Critical:</strong> Your savings are projected to be depleted by 
                 ${formatDate(summary.savingsDepletionMonth)}. 
                 Consider reducing expenses or increasing income.
             </div>
         `;
     }
     
+    if (!alertsHtml) {
+        alertsHtml = `
+            <div class="alert alert-info">
+                Forecast period: ${formatDate(summary.startDate)} through month ${summary.monthsForecasted}
+            </div>
+        `;
+    }
+    
     container.innerHTML = `
-        ${warningHtml}
-        <div class="alert" style="background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; margin-bottom: 15px;">
-            📅 <strong>Starting from:</strong> ${formatDate(summary.startDate)}
-        </div>
-        <div class="summary-grid">
-            <div class="summary-item">
-                <div class="summary-label">Starting Checking Balance</div>
-                <div class="summary-value">$${formatNumber(summary.startingCheckingBalance || 0)}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Starting Savings Balance</div>
-                <div class="summary-value">$${formatNumber(summary.startingSavingsBalance || 0)}</div>
-            </div>
-            <div class="summary-item summary-positive">
-                <div class="summary-label">Total Income (${summary.monthsForecasted} months)</div>
-                <div class="summary-value">$${formatNumber(summary.totalIncome)}</div>
-            </div>
-            <div class="summary-item summary-negative">
-                <div class="summary-label">Total Expenses (${summary.monthsForecasted} months)</div>
-                <div class="summary-value">$${formatNumber(summary.totalExpenses)}</div>
-            </div>
-            <div class="summary-item ${summary.monthlyNetCashFlow >= 0 ? 'summary-positive' : 'summary-negative'}">
-                <div class="summary-label">Monthly Net Cash Flow</div>
-                <div class="summary-value">$${formatNumber(summary.monthlyNetCashFlow)}</div>
-            </div>
-            <div class="summary-item summary-positive">
-                <div class="summary-label">Total Investment Returns</div>
-                <div class="summary-value">$${formatNumber(summary.totalInvestmentReturns || 0)}</div>
-            </div>
-            <div class="summary-item summary-warning">
-                <div class="summary-label">Total Transfers from Savings</div>
-                <div class="summary-value">$${formatNumber(summary.totalTransfers || 0)}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Ending Checking Balance</div>
-                <div class="summary-value">$${formatNumber(summary.endingCheckingBalance || 0)}</div>
-            </div>
-            <div class="summary-item ${(summary.endingSavingsBalance || 0) > 0 ? 'summary-positive' : 'summary-negative'}">
-                <div class="summary-label">Ending Savings Balance</div>
-                <div class="summary-value">$${formatNumber(summary.endingSavingsBalance || 0)}</div>
-            </div>
-        </div>
+        ${alertsHtml}
+        <table class="summary-table">
+            <tr>
+                <td class="metric-label">Starting Checking</td>
+                <td class="metric-value">$${formatNumber(summary.startingCheckingBalance || 0)}</td>
+                <td class="metric-label">Ending Checking</td>
+                <td class="metric-value">$${formatNumber(summary.endingCheckingBalance || 0)}</td>
+            </tr>
+            <tr>
+                <td class="metric-label">Starting Savings</td>
+                <td class="metric-value">$${formatNumber(summary.startingSavingsBalance || 0)}</td>
+                <td class="metric-label">Ending Savings</td>
+                <td class="metric-value ${(summary.endingSavingsBalance || 0) > 0 ? 'positive' : 'negative'}">$${formatNumber(summary.endingSavingsBalance || 0)}</td>
+            </tr>
+            <tr>
+                <td class="metric-label">Total Income</td>
+                <td class="metric-value positive">$${formatNumber(summary.totalIncome)}</td>
+                <td class="metric-label">Total Expenses</td>
+                <td class="metric-value negative">${formatAccountingNumber(summary.totalExpenses, true)}</td>
+            </tr>
+            <tr>
+                <td class="metric-label">Monthly Net Flow</td>
+                <td class="metric-value ${summary.monthlyNetCashFlow >= 0 ? 'positive' : 'negative'}">${summary.monthlyNetCashFlow >= 0 ? '$' + formatNumber(summary.monthlyNetCashFlow) : formatAccountingNumber(summary.monthlyNetCashFlow, true)}</td>
+                <td class="metric-label">Total Transfers</td>
+                <td class="metric-value">$${formatNumber(summary.totalTransfers || 0)}</td>
+            </tr>
+            <tr>
+                <td class="metric-label">Investment Returns</td>
+                <td class="metric-value positive">$${formatNumber(summary.totalInvestmentReturns || 0)}</td>
+                <td class="metric-label">Forecast Period</td>
+                <td class="metric-value">${summary.monthsForecasted} months</td>
+            </tr>
+        </table>
     `;
 }
 
 function displayForecastEvents(events) {
     const tbody = document.getElementById('events-tbody');
     
-    tbody.innerHTML = events.map(event => {
+    tbody.innerHTML = events.map((event, index) => {
+        const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
         const isTransfer = event.transferAmount && event.transferAmount > 0;
         const isInvestmentReturn = event.type === 'investment_return';
-        const rowClass = isTransfer ? 'class="withdrawal-highlight"' : '';
         
-        // Map event type to display type with special handling for investment_return
+        let specialClass = '';
         let typeClass = '';
         let typeDisplay = '';
-        if (isInvestmentReturn) {
-            typeClass = 'type-income';
-            typeDisplay = 'Investment Return';
+        
+        if (isTransfer) {
+            specialClass = 'transfer-row';
+            typeClass = 'type-transfer';
+            typeDisplay = 'Transfer';
+        } else if (isInvestmentReturn) {
+            specialClass = 'return-row';
+            typeClass = 'type-investment_return';
+            typeDisplay = 'Return';
         } else if (event.type === 'income') {
             typeClass = 'type-income';
             typeDisplay = 'Income';
@@ -429,19 +461,22 @@ function displayForecastEvents(events) {
             typeDisplay = 'Expense';
         }
         
+        const isDebit = event.amount < 0;
+        const amountClass = isDebit ? 'debit' : 'credit';
+        
         return `
-            <tr ${rowClass}>
-                <td>${formatDate(event.date)}</td>
-                <td class="${typeClass}">
-                    ${typeDisplay}
-                </td>
+            <tr class="${rowClass} ${specialClass}">
+                <td class="date">${formatDate(event.date)}</td>
+                <td class="${typeClass}">${typeDisplay}</td>
                 <td>${escapeHtml(event.name)}</td>
-                <td class="${event.amount >= 0 ? 'amount-positive' : 'amount-negative'}">
-                    $${formatNumber(event.amount)}
+                <td class="amount ${amountClass}">
+                    ${isDebit ? formatAccountingNumber(event.amount, true) : '$' + formatNumber(event.amount)}
                 </td>
-                <td>$${formatNumber(event.checkingBalanceAfter || 0)}</td>
-                <td>$${formatNumber(event.savingsBalanceAfter || 0)}</td>
-                <td>${isTransfer ? '$' + formatNumber(event.transferAmount) : '-'}</td>
+                <td class="amount">$${formatNumber(event.checkingBalanceAfter || 0)}</td>
+                <td class="amount">$${formatNumber(event.savingsBalanceAfter || 0)}</td>
+                <td class="amount ${isTransfer ? 'transfer' : ''}">
+                    ${isTransfer ? '$' + formatNumber(event.transferAmount) : '-'}
+                </td>
             </tr>
         `;
     }).join('');
