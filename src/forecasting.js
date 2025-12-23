@@ -138,10 +138,10 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     // If the transaction would take us below minimum, transfer first
     if (balanceAfterTransaction < minCheckingBalance && currentSavingsBalance > 0) {
       // Check if enough time has passed since last transfer
-      // OR if checking would go negative (emergency override)
+      // OR if checking would go to zero or negative (emergency override)
       const canTransfer = !lastTransferDate || 
         (event.date - lastTransferDate) >= (transferFrequencyDays * 24 * 60 * 60 * 1000) ||
-        balanceAfterTransaction < 0;
+        balanceAfterTransaction <= 0;
       
       if (canTransfer) {
         // Calculate amount needed to reach minimum after transaction
@@ -158,8 +158,8 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
           totalTransfers += transferAmount;
           lastTransferDate = event.date;
           
-          if (balanceAfterTransaction < 0) {
-            transferReason = 'Emergency: Would go negative';
+          if (balanceAfterTransaction <= 0) {
+            transferReason = 'Emergency: Would go to zero or negative';
           } else {
             transferReason = 'Balance would fall below minimum';
           }
