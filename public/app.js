@@ -37,9 +37,9 @@ function switchTabByName(tabName) {
     // Show selected tab content
     document.getElementById(`${tabName}-tab`).classList.add('active');
     
-    // Activate selected tab button
+    // Activate selected tab button using data attribute
     document.querySelectorAll('.tab-button').forEach(button => {
-        if (button.textContent.trim().toLowerCase() === tabName) {
+        if (button.dataset.tab === tabName) {
             button.classList.add('active');
         }
     });
@@ -473,10 +473,6 @@ async function deleteExpense(id) {
 }
 
 // Forecast functions
-async function generateForecast() {
-    await generateAndSwitchToForecast();
-}
-
 function displayForecastSummary(summary) {
     const container = document.getElementById('summary-content');
     
