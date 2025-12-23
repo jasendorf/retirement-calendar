@@ -146,22 +146,26 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
       if (canTransfer) {
         // Calculate amount needed to reach minimum after transaction
         const shortfall = minCheckingBalance - balanceAfterTransaction;
-        // Round up to nearest $100
-        const transferNeeded = Math.ceil(shortfall / 100) * 100;
         
-        // Transfer the calculated amount, or all available savings if insufficient
-        transferAmount = Math.min(transferNeeded, currentSavingsBalance);
-        
-        if (transferAmount > 0) {
-          currentSavingsBalance -= transferAmount;
-          currentCheckingBalance += transferAmount;
-          totalTransfers += transferAmount;
-          lastTransferDate = event.date;
+        // Only transfer if there's actually a shortfall (should always be true given outer condition)
+        if (shortfall > 0) {
+          // Round up to nearest $100
+          const transferNeeded = Math.ceil(shortfall / 100) * 100;
           
-          if (balanceAfterTransaction <= 0) {
-            transferReason = 'Emergency: Would go to zero or negative';
-          } else {
-            transferReason = 'Balance would fall below minimum';
+          // Transfer the calculated amount, or all available savings if insufficient
+          transferAmount = Math.min(transferNeeded, currentSavingsBalance);
+          
+          if (transferAmount > 0) {
+            currentSavingsBalance -= transferAmount;
+            currentCheckingBalance += transferAmount;
+            totalTransfers += transferAmount;
+            lastTransferDate = event.date;
+            
+            if (balanceAfterTransaction <= 0) {
+              transferReason = 'Emergency: Would go to zero or negative';
+            } else {
+              transferReason = 'Balance would fall below minimum';
+            }
           }
         }
       }
