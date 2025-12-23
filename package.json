@@ -7,13 +7,19 @@
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["retirement", "finance", "forecasting", "savings"],
+  "keywords": [
+    "retirement",
+    "finance",
+    "forecasting",
+    "savings"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^2.2.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
     "sqlite3": "^5.1.7"
   }
 }
