@@ -356,12 +356,10 @@ function displayForecastSummary(summary) {
         `;
     }
     
-    const startDateText = summary.startDate ? formatDate(summary.startDate) : 'N/A';
-    
     container.innerHTML = `
         ${warningHtml}
         <div class="alert" style="background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; margin-bottom: 15px;">
-            📅 <strong>Starting from:</strong> ${startDateText}
+            📅 <strong>Starting from:</strong> ${formatDate(summary.startDate)}
         </div>
         <div class="summary-grid">
             <div class="summary-item">

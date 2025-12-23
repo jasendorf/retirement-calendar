@@ -48,7 +48,7 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     const currentMonth = startDate.getMonth() + month;
     
     // Add investment return event at the beginning of each month (except the first partial month)
-    if (month > 0 && annualReturnRate > 0 && currentSavingsBalance > 0) {
+    if (month > 0 && annualReturnRate > 0) {
       const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
       allEvents.push({
         date: firstDayOfMonth,
@@ -107,22 +107,25 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     
     // Handle investment returns
     if (event.isInvestmentReturn) {
-      const monthlyReturn = currentSavingsBalance * (annualReturnRate / 100 / 12);
-      currentSavingsBalance += monthlyReturn;
-      totalInvestmentReturns += monthlyReturn;
-      
-      events.push({
-        date: event.date.toISOString().split('T')[0],
-        type: 'investment_return',
-        name: 'Investment Return',
-        amount: monthlyReturn,
-        checkingBalanceBefore: beforeCheckingBalance,
-        checkingBalanceAfter: currentCheckingBalance,
-        savingsBalanceBefore: beforeSavingsBalance,
-        savingsBalanceAfter: currentSavingsBalance,
-        transferAmount: 0,
-        transferReason: null
-      });
+      // Only calculate if there's a savings balance
+      if (currentSavingsBalance > 0) {
+        const monthlyReturn = currentSavingsBalance * (annualReturnRate / 100 / 12);
+        currentSavingsBalance += monthlyReturn;
+        totalInvestmentReturns += monthlyReturn;
+        
+        events.push({
+          date: event.date.toISOString().split('T')[0],
+          type: 'investment_return',
+          name: 'Investment Return',
+          amount: monthlyReturn,
+          checkingBalanceBefore: beforeCheckingBalance,
+          checkingBalanceAfter: currentCheckingBalance,
+          savingsBalanceBefore: beforeSavingsBalance,
+          savingsBalanceAfter: currentSavingsBalance,
+          transferAmount: 0,
+          transferReason: null
+        });
+      }
       return;
     }
     

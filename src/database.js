@@ -78,10 +78,11 @@ class Database {
             reject(err);
           } else {
             // Run migration to add annual_return_rate column if it doesn't exist
+            // Use nullable column to avoid issues with existing databases
             this.db.run(`
-              ALTER TABLE account_config ADD COLUMN annual_return_rate REAL NOT NULL DEFAULT 0
+              ALTER TABLE account_config ADD COLUMN annual_return_rate REAL DEFAULT 0
             `, (err) => {
-              // Ignore error if column already exists
+              // Ignore error if column already exists (duplicate column name)
               resolve();
             });
           }
