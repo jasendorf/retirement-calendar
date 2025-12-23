@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  retirement-calendar:
+    build: .
+    container_name: retirement-calendar
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persistent data volume for the SQLite database
+      - retirement-data:/app/data
+    environment:
+      - DB_PATH=/app/data/retirement.db
+      - PORT=3000
+    restart: unless-stopped
+
+volumes:
+  retirement-data:
+    driver: local
