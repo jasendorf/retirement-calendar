@@ -60,6 +60,7 @@ async function updateAccountConfig() {
     const savingsBalance = parseFloat(document.getElementById('savings-balance').value);
     const transferFrequencyDays = parseInt(document.getElementById('transfer-frequency').value);
     const minCheckingBalance = parseFloat(document.getElementById('min-checking').value);
+    const annualReturnRate = parseFloat(document.getElementById('annual-return-rate').value);
     
     if (isNaN(checkingBalance) || isNaN(savingsBalance)) {
         alert('Please enter valid account balances');
@@ -79,7 +80,8 @@ async function updateAccountConfig() {
                 checkingBalance,
                 savingsBalance,
                 transferFrequencyDays,
-                minCheckingBalance: isNaN(minCheckingBalance) ? 0 : minCheckingBalance
+                minCheckingBalance: isNaN(minCheckingBalance) ? 0 : minCheckingBalance,
+                annualReturnRate: isNaN(annualReturnRate) ? 0 : annualReturnRate
             })
         });
         
@@ -105,6 +107,7 @@ async function loadAccountConfig() {
         document.getElementById('savings-balance').value = config?.savings_balance || 0;
         document.getElementById('transfer-frequency').value = config?.transfer_frequency_days || 30;
         document.getElementById('min-checking').value = config?.min_checking_balance || 0;
+        document.getElementById('annual-return-rate').value = config?.annual_return_rate || 0;
         
         // Display current balances
         const display = document.getElementById('current-balances');
@@ -114,6 +117,7 @@ async function loadAccountConfig() {
                     <strong>Current Configuration:</strong><br>
                     Checking: $${formatNumber(config.checking_balance || 0)}<br>
                     Savings: $${formatNumber(config.savings_balance || 0)}<br>
+                    Annual Return Rate: ${(config.annual_return_rate || 0).toFixed(1)}%<br>
                     Transfer Frequency: ${config.transfer_frequency_days || 30} days<br>
                     Min Checking Balance: $${formatNumber(config.min_checking_balance || 0)}
                 </div>
@@ -352,8 +356,13 @@ function displayForecastSummary(summary) {
         `;
     }
     
+    const startDateText = summary.startDate ? formatDate(summary.startDate) : 'N/A';
+    
     container.innerHTML = `
         ${warningHtml}
+        <div class="alert" style="background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; margin-bottom: 15px;">
+            📅 <strong>Starting from:</strong> ${startDateText}
+        </div>
         <div class="summary-grid">
             <div class="summary-item">
                 <div class="summary-label">Starting Checking Balance</div>
@@ -374,6 +383,10 @@ function displayForecastSummary(summary) {
             <div class="summary-item ${summary.monthlyNetCashFlow >= 0 ? 'summary-positive' : 'summary-negative'}">
                 <div class="summary-label">Monthly Net Cash Flow</div>
                 <div class="summary-value">$${formatNumber(summary.monthlyNetCashFlow)}</div>
+            </div>
+            <div class="summary-item summary-positive">
+                <div class="summary-label">Total Investment Returns</div>
+                <div class="summary-value">$${formatNumber(summary.totalInvestmentReturns || 0)}</div>
             </div>
             <div class="summary-item summary-warning">
                 <div class="summary-label">Total Transfers from Savings</div>
@@ -396,13 +409,28 @@ function displayForecastEvents(events) {
     
     tbody.innerHTML = events.map(event => {
         const isTransfer = event.transferAmount && event.transferAmount > 0;
+        const isInvestmentReturn = event.type === 'investment_return';
         const rowClass = isTransfer ? 'class="withdrawal-highlight"' : '';
+        
+        // Map event type to display type with special handling for investment_return
+        let typeClass = '';
+        let typeDisplay = '';
+        if (isInvestmentReturn) {
+            typeClass = 'type-income';
+            typeDisplay = 'Investment Return';
+        } else if (event.type === 'income') {
+            typeClass = 'type-income';
+            typeDisplay = 'Income';
+        } else {
+            typeClass = 'type-expense';
+            typeDisplay = 'Expense';
+        }
         
         return `
             <tr ${rowClass}>
                 <td>${formatDate(event.date)}</td>
-                <td class="${event.type === 'income' ? 'type-income' : 'type-expense'}">
-                    ${event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                <td class="${typeClass}">
+                    ${typeDisplay}
                 </td>
                 <td>${escapeHtml(event.name)}</td>
                 <td class="${event.amount >= 0 ? 'amount-positive' : 'amount-negative'}">
