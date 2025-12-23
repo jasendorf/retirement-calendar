@@ -130,33 +130,45 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
       return;
     }
     
-    // Apply transaction to checking account
-    currentCheckingBalance += event.amount;
-    
-    // Check if we need to transfer from savings
+    // PREDICTIVE LOGIC: Check if applying the transaction would cause problems BEFORE applying it
     let transferAmount = 0;
     let transferReason = null;
+    const balanceAfterTransaction = currentCheckingBalance + event.amount;
     
-    if (currentCheckingBalance < minCheckingBalance && currentSavingsBalance > 0) {
+    // If the transaction would take us below minimum, transfer first
+    if (balanceAfterTransaction < minCheckingBalance && currentSavingsBalance > 0) {
       // Check if enough time has passed since last transfer
+      // OR if checking would go negative (emergency override)
       const canTransfer = !lastTransferDate || 
-        (event.date - lastTransferDate) >= (transferFrequencyDays * 24 * 60 * 60 * 1000);
+        (event.date - lastTransferDate) >= (transferFrequencyDays * 24 * 60 * 60 * 1000) ||
+        balanceAfterTransaction < 0;
       
       if (canTransfer) {
-        // Calculate transfer amount - bring checking to a reasonable level
-        // Transfer enough to cover the shortfall plus a buffer (up to min balance)
-        const shortfall = minCheckingBalance - currentCheckingBalance;
-        transferAmount = Math.min(shortfall, currentSavingsBalance);
+        // Calculate amount needed to reach minimum after transaction
+        const shortfall = minCheckingBalance - balanceAfterTransaction;
+        // Round up to nearest $100
+        const transferNeeded = Math.ceil(shortfall / 100) * 100;
+        
+        // Transfer the calculated amount, or all available savings if insufficient
+        transferAmount = Math.min(transferNeeded, currentSavingsBalance);
         
         if (transferAmount > 0) {
           currentSavingsBalance -= transferAmount;
           currentCheckingBalance += transferAmount;
           totalTransfers += transferAmount;
           lastTransferDate = event.date;
-          transferReason = 'Balance below minimum';
+          
+          if (balanceAfterTransaction < 0) {
+            transferReason = 'Emergency: Would go negative';
+          } else {
+            transferReason = 'Balance would fall below minimum';
+          }
         }
       }
     }
+    
+    // NOW apply the transaction AFTER the transfer
+    currentCheckingBalance += event.amount;
     
     events.push({
       date: event.date.toISOString().split('T')[0],
