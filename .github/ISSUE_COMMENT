@@ -1,0 +1,1 @@
+Additional requirement: When calculating the transfer amount from savings to checking, round the amount up to the nearest $100. For example, if $237 is needed, transfer $300. If $1,050 is needed, transfer $1,100.
