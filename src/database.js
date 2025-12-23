@@ -70,13 +70,21 @@ class Database {
             savings_balance REAL NOT NULL DEFAULT 0,
             transfer_frequency_days INTEGER NOT NULL DEFAULT 30,
             min_checking_balance REAL NOT NULL DEFAULT 0,
+            annual_return_rate REAL NOT NULL DEFAULT 0,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `, (err) => {
           if (err) {
             reject(err);
           } else {
-            resolve();
+            // Run migration to add annual_return_rate column if it doesn't exist
+            // Use nullable column to avoid issues with existing databases
+            this.db.run(`
+              ALTER TABLE account_config ADD COLUMN annual_return_rate REAL DEFAULT 0
+            `, (err) => {
+              // Ignore error if column already exists (duplicate column name)
+              resolve();
+            });
           }
         });
       });
@@ -189,7 +197,7 @@ class Database {
   }
 
   // Account configuration operations
-  setAccountConfig(checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance) {
+  setAccountConfig(checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate) {
     return new Promise((resolve, reject) => {
       // First, check if a config record exists
       this.db.get('SELECT * FROM account_config WHERE id = 1', (err, row) => {
@@ -200,9 +208,9 @@ class Database {
           this.db.run(
             `UPDATE account_config 
              SET checking_balance = ?, savings_balance = ?, transfer_frequency_days = ?, 
-                 min_checking_balance = ?, updated_at = CURRENT_TIMESTAMP 
+                 min_checking_balance = ?, annual_return_rate = ?, updated_at = CURRENT_TIMESTAMP 
              WHERE id = 1`,
-            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance],
+            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate || 0],
             (err) => {
               if (err) reject(err);
               else resolve({
@@ -210,7 +218,8 @@ class Database {
                 checking_balance: checkingBalance,
                 savings_balance: savingsBalance,
                 transfer_frequency_days: transferFrequencyDays,
-                min_checking_balance: minCheckingBalance
+                min_checking_balance: minCheckingBalance,
+                annual_return_rate: annualReturnRate || 0
               });
             }
           );
@@ -218,9 +227,9 @@ class Database {
           // Insert new record with id=1
           this.db.run(
             `INSERT INTO account_config 
-             (id, checking_balance, savings_balance, transfer_frequency_days, min_checking_balance) 
-             VALUES (1, ?, ?, ?, ?)`,
-            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance],
+             (id, checking_balance, savings_balance, transfer_frequency_days, min_checking_balance, annual_return_rate) 
+             VALUES (1, ?, ?, ?, ?, ?)`,
+            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate || 0],
             function(err) {
               if (err) reject(err);
               else resolve({
@@ -228,7 +237,8 @@ class Database {
                 checking_balance: checkingBalance,
                 savings_balance: savingsBalance,
                 transfer_frequency_days: transferFrequencyDays,
-                min_checking_balance: minCheckingBalance
+                min_checking_balance: minCheckingBalance,
+                annual_return_rate: annualReturnRate || 0
               });
             }
           );

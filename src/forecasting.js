@@ -12,7 +12,7 @@
  */
 function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForecast = 12) {
   // Handle both old (single savings) and new (checking/savings) formats
-  let checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance;
+  let checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate;
   
   if (typeof totalSavingsOrConfig === 'object' && totalSavingsOrConfig !== null) {
     // New format with account config
@@ -20,19 +20,23 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     savingsBalance = totalSavingsOrConfig.savingsBalance || 0;
     transferFrequencyDays = totalSavingsOrConfig.transferFrequencyDays || 30;
     minCheckingBalance = totalSavingsOrConfig.minCheckingBalance || 0;
+    annualReturnRate = totalSavingsOrConfig.annualReturnRate || 0;
   } else {
     // Legacy format - treat as single savings account
     checkingBalance = totalSavingsOrConfig || 0;
     savingsBalance = 0;
     transferFrequencyDays = 30;
     minCheckingBalance = 0;
+    annualReturnRate = 0;
   }
   const events = [];
   let currentCheckingBalance = checkingBalance;
   let currentSavingsBalance = savingsBalance;
   let totalTransfers = 0;
+  let totalInvestmentReturns = 0;
   let lastTransferDate = null;
   
+  // Start from today's date instead of first of month
   const today = new Date();
   const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   
@@ -43,9 +47,28 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     const currentYear = startDate.getFullYear();
     const currentMonth = startDate.getMonth() + month;
     
+    // Add investment return event at the beginning of each month (except the first partial month)
+    if (month > 0 && annualReturnRate > 0) {
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+      allEvents.push({
+        date: firstDayOfMonth,
+        type: 'investment_return',
+        name: 'Investment Return',
+        amount: 0, // Will be calculated when processing
+        day_of_month: 1,
+        isInvestmentReturn: true
+      });
+    }
+    
     // Add expenses for this month
     expenses.forEach(expense => {
       const eventDate = new Date(currentYear, currentMonth, expense.day_of_month);
+      
+      // For the first month, only include events on or after today
+      if (month === 0 && eventDate < startDate) {
+        return; // Skip this event
+      }
+      
       allEvents.push({
         date: eventDate,
         type: 'expense',
@@ -58,6 +81,12 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     // Add income for this month
     income.forEach(inc => {
       const eventDate = new Date(currentYear, currentMonth, inc.day_of_month);
+      
+      // For the first month, only include events on or after today
+      if (month === 0 && eventDate < startDate) {
+        return; // Skip this event
+      }
+      
       allEvents.push({
         date: eventDate,
         type: 'income',
@@ -75,6 +104,31 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
   allEvents.forEach(event => {
     const beforeCheckingBalance = currentCheckingBalance;
     const beforeSavingsBalance = currentSavingsBalance;
+    
+    // Handle investment returns
+    if (event.isInvestmentReturn) {
+      // Only calculate if there's a savings balance
+      if (currentSavingsBalance > 0) {
+        const monthlyReturnRate = annualReturnRate / 100 / 12;
+        const monthlyReturn = currentSavingsBalance * monthlyReturnRate;
+        currentSavingsBalance += monthlyReturn;
+        totalInvestmentReturns += monthlyReturn;
+        
+        events.push({
+          date: event.date.toISOString().split('T')[0],
+          type: 'investment_return',
+          name: 'Investment Return',
+          amount: monthlyReturn,
+          checkingBalanceBefore: beforeCheckingBalance,
+          checkingBalanceAfter: currentCheckingBalance,
+          savingsBalanceBefore: beforeSavingsBalance,
+          savingsBalanceAfter: currentSavingsBalance,
+          transferAmount: 0,
+          transferReason: null
+        });
+      }
+      return;
+    }
     
     // Apply transaction to checking account
     currentCheckingBalance += event.amount;
@@ -137,12 +191,14 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
   return {
     events,
     summary: {
+      startDate: startDate.toISOString().split('T')[0],
       startingCheckingBalance: checkingBalance,
       startingSavingsBalance: savingsBalance,
       totalIncome,
       totalExpenses,
       monthlyNetCashFlow,
       totalTransfers,
+      totalInvestmentReturns,
       endingCheckingBalance: currentCheckingBalance,
       endingSavingsBalance: currentSavingsBalance,
       monthsForecasted: monthsToForecast,

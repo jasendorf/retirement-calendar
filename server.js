@@ -50,7 +50,8 @@ app.get('/api/data', async (req, res) => {
         checkingBalance: accountConfig.checking_balance || 0,
         savingsBalance: accountConfig.savings_balance || 0,
         transferFrequencyDays: accountConfig.transfer_frequency_days || 30,
-        minCheckingBalance: accountConfig.min_checking_balance || 0
+        minCheckingBalance: accountConfig.min_checking_balance || 0,
+        annualReturnRate: accountConfig.annual_return_rate || 0
       } : null
     });
   } catch (error) {
@@ -162,7 +163,7 @@ app.get('/api/savings', async (req, res) => {
 // Account configuration routes
 app.post('/api/account-config', async (req, res) => {
   try {
-    const { checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance } = req.body;
+    const { checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate } = req.body;
     
     if (checkingBalance === undefined || savingsBalance === undefined) {
       return res.status(400).json({ error: 'Checking and savings balances are required' });
@@ -172,7 +173,8 @@ app.post('/api/account-config', async (req, res) => {
       checkingBalance,
       savingsBalance,
       transferFrequencyDays || 30,
-      minCheckingBalance || 0
+      minCheckingBalance || 0,
+      annualReturnRate || 0
     );
     res.json(config);
   } catch (error) {
@@ -209,7 +211,8 @@ app.get('/api/forecast', async (req, res) => {
         checkingBalance: accountConfig.checking_balance || 0,
         savingsBalance: accountConfig.savings_balance || 0,
         transferFrequencyDays: accountConfig.transfer_frequency_days || 30,
-        minCheckingBalance: accountConfig.min_checking_balance || 0
+        minCheckingBalance: accountConfig.min_checking_balance || 0,
+        annualReturnRate: accountConfig.annual_return_rate || 0
       };
     } else {
       // Fallback to old savings model for backward compatibility
