@@ -10,114 +10,189 @@
     <div class="container">
         <header>
             <h1>Retirement Calendar</h1>
-            <p>Financial Forecasting Application</p>
+            <p>Forecast your retirement financial spending and savings withdrawals</p>
         </header>
 
-        <main>
-            <!-- Input Section -->
-            <section class="input-section">
-                <section class="ledger-section">
-                    <h3 class="ledger-header">Account Configuration</h3>
-                    <table class="config-table">
-                        <tr>
-                            <td><label for="checking-balance">Checking Balance</label></td>
-                            <td><input type="number" id="checking-balance" step="0.01"></td>
-                            <td><label for="savings-balance">Savings Balance</label></td>
-                            <td><input type="number" id="savings-balance" step="0.01"></td>
-                        </tr>
-                        <tr>
-                            <td><label for="transfer-frequency">Transfer Frequency (days)</label></td>
-                            <td><input type="number" id="transfer-frequency" min="1" value="30"></td>
-                            <td><label for="min-checking">Min Checking</label></td>
-                            <td><input type="number" id="min-checking" step="0.01" value="0"></td>
-                        </tr>
-                        <tr>
-                            <td><label for="annual-return-rate">Annual Return Rate (%)</label></td>
-                            <td><input type="number" id="annual-return-rate" step="0.1" min="0" max="100" value="0"></td>
-                            <td><label for="start-date">Forecast Start Date</label></td>
-                            <td><input type="date" id="start-date" value="">
-                                <small style="display: block; color: #6c757d; font-size: 11px;">Balances as of this date</small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="text-align: right;">
-                                <button class="btn-compact" onclick="updateAccountConfig()">Update Configuration</button>
-                            </td>
-                        </tr>
-                    </table>
-                    <div id="current-balances" class="config-display"></div>
-                </section>
+        <!-- Tab Navigation -->
+        <nav class="tab-nav">
+            <button class="tab-button active" onclick="switchTab(event, 'configuration')">
+                Configuration
+            </button>
+            <button class="tab-button" onclick="switchTab(event, 'forecast')">
+                Forecast
+            </button>
+        </nav>
 
-                <section class="ledger-section">
-                    <h3 class="ledger-header">Monthly Income</h3>
-                    <div class="input-row">
-                        <label for="income-name">Name</label>
-                        <input type="text" id="income-name" placeholder="e.g., Social Security">
-                        <label for="income-amount">Amount</label>
-                        <input type="number" id="income-amount" placeholder="0.00" step="0.01">
-                        <label for="income-day">Day</label>
-                        <input type="number" id="income-day" placeholder="1-31" min="1" max="31">
-                        <label for="income-inflation">Annual Increase (%)</label>
-                        <input type="number" id="income-inflation" placeholder="0.0" step="0.1" value="0">
-                        <button class="btn-compact" onclick="addIncome()">Add Income</button>
+        <!-- Configuration Tab Content -->
+        <div id="configuration-tab" class="tab-content active">
+            
+            <!-- Account Configuration Section -->
+            <section class="config-section">
+                <h2>Account Configuration</h2>
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="checking-balance">Checking Balance ($)</label>
+                            <input type="number" id="checking-balance" placeholder="Enter checking balance" step="0.01">
+                        </div>
+                        <div class="form-field">
+                            <label for="savings-balance">Savings Balance ($)</label>
+                            <input type="number" id="savings-balance" placeholder="Enter savings balance" step="0.01">
+                        </div>
                     </div>
-                    <div id="income-list"></div>
-                </section>
-
-                <section class="ledger-section">
-                    <h3 class="ledger-header">Monthly Expenses</h3>
-                    <div class="input-row">
-                        <label for="expense-name">Name</label>
-                        <input type="text" id="expense-name" placeholder="e.g., Mortgage">
-                        <label for="expense-amount">Amount</label>
-                        <input type="number" id="expense-amount" placeholder="0.00" step="0.01">
-                        <label for="expense-day">Day</label>
-                        <input type="number" id="expense-day" placeholder="1-31" min="1" max="31">
-                        <label for="expense-inflation">Annual Increase (%)</label>
-                        <input type="number" id="expense-inflation" placeholder="0.0" step="0.1" value="0">
-                        <button class="btn-compact" onclick="addExpense()">Add Expense</button>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="start-date">Forecast Start Date</label>
+                            <input type="date" id="start-date">
+                        </div>
+                        <div class="form-field">
+                            <label for="annual-return-rate">Annual Return Rate (%)</label>
+                            <input type="number" id="annual-return-rate" placeholder="7.0" step="0.1" value="7.0">
+                        </div>
                     </div>
-                    <div id="expense-list"></div>
-                </section>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="transfer-frequency">Transfer Frequency (days)</label>
+                            <input type="number" id="transfer-frequency" placeholder="30" min="1" value="30">
+                        </div>
+                        <div class="form-field">
+                            <label for="min-checking">Minimum Checking Balance ($)</label>
+                            <input type="number" id="min-checking" placeholder="0.00" step="0.01" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button onclick="updateAccountConfig()" class="btn btn-primary">Save Configuration</button>
+                    </div>
+                </div>
+                <div id="current-balances" class="config-display"></div>
             </section>
 
-            <!-- Forecast Section -->
+            <!-- Monthly Income Section -->
+            <section class="config-section">
+                <h2>Monthly Income</h2>
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="income-name">Income Name</label>
+                            <input type="text" id="income-name" placeholder="e.g., Social Security">
+                        </div>
+                        <div class="form-field">
+                            <label for="income-amount">Amount ($)</label>
+                            <input type="number" id="income-amount" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="income-day">Day of Month</label>
+                            <input type="number" id="income-day" placeholder="1-31" min="1" max="31">
+                        </div>
+                        <div class="form-field">
+                            <label for="income-inflation">Annual Increase (%)</label>
+                            <input type="number" id="income-inflation" placeholder="0.0" step="0.1" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button onclick="addIncome()" class="btn btn-success">Add Income</button>
+                    </div>
+                </div>
+                <div id="income-list" class="list-container"></div>
+            </section>
+
+            <!-- Monthly Expenses Section -->
+            <section class="config-section">
+                <h2>Monthly Expenses</h2>
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="expense-name">Expense Name</label>
+                            <input type="text" id="expense-name" placeholder="e.g., Mortgage">
+                        </div>
+                        <div class="form-field">
+                            <label for="expense-amount">Amount ($)</label>
+                            <input type="number" id="expense-amount" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="expense-day">Day of Month</label>
+                            <input type="number" id="expense-day" placeholder="1-31" min="1" max="31">
+                        </div>
+                        <div class="form-field">
+                            <label for="expense-inflation">Annual Increase (%)</label>
+                            <input type="number" id="expense-inflation" placeholder="0.0" step="0.1" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button onclick="addExpense()" class="btn btn-danger">Add Expense</button>
+                    </div>
+                </div>
+                <div id="expense-list" class="list-container"></div>
+            </section>
+
+            <!-- Forecast Generation Section -->
+            <section class="config-section">
+                <h2>Generate Forecast</h2>
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="forecast-months">Months to Forecast</label>
+                            <input type="number" id="forecast-months" value="12" min="1" max="120">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button onclick="generateAndSwitchToForecast()" class="btn btn-primary btn-large">
+                            Generate Forecast
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Forecast Tab Content -->
+        <div id="forecast-tab" class="tab-content">
+            
+            <!-- Forecast Summary -->
             <section class="forecast-section">
-                <section class="ledger-section">
-                    <h3 class="ledger-header">Generate Forecast</h3>
-                    <div class="input-row">
-                        <label for="forecast-months">Months to Forecast</label>
-                        <input type="number" id="forecast-months" value="12" min="1" max="120">
-                        <button class="btn-compact" onclick="generateForecast()">Generate Forecast</button>
-                    </div>
-                </section>
-
-                <section id="forecast-summary" class="ledger-section" style="display: none;">
-                    <h3 class="ledger-header">Forecast Summary</h3>
-                    <div id="summary-content"></div>
-                </section>
-
-                <section id="forecast-events" class="ledger-section" style="display: none;">
-                    <h3 class="ledger-header">Forecast Events</h3>
-                    <div class="table-container">
-                        <table class="forecast-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Description</th>
-                                    <th class="amount">Amount</th>
-                                    <th class="amount">Checking</th>
-                                    <th class="amount">Savings</th>
-                                    <th class="amount">Transfer</th>
-                                </tr>
-                            </thead>
-                            <tbody id="events-tbody"></tbody>
-                        </table>
-                    </div>
-                </section>
+                <div class="section-header">
+                    <h2>Forecast Summary</h2>
+                    <button onclick="switchTabByName('configuration')" class="btn btn-secondary">
+                        Back to Configuration
+                    </button>
+                </div>
+                <div id="summary-content"></div>
             </section>
-        </main>
+
+            <!-- Forecast Events -->
+            <section class="forecast-section">
+                <h2>Forecast Events</h2>
+                <div class="table-container">
+                    <table id="events-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Checking Balance</th>
+                                <th>Savings Balance</th>
+                                <th>Transfer</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+
     </div>
 
     <script src="app.js"></script>

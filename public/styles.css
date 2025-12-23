@@ -38,6 +38,207 @@ header p {
     margin: 0;
 }
 
+/* Tab Navigation */
+.tab-nav {
+    display: flex;
+    gap: 0;
+    margin: 20px 0 0 0;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.tab-button {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    color: #6c757d;
+    transition: all 0.2s;
+    position: relative;
+    top: 2px;
+}
+
+.tab-button:hover {
+    color: #495057;
+    background: #f8f9fa;
+}
+
+.tab-button.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    font-weight: 600;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    padding: 24px 0;
+    animation: fadeIn 0.3s;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Configuration Section Styling */
+.config-section {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.config-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* Form Layout */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-field label {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #495057;
+}
+
+.form-field input {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+.form-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+/* Forecast Section Styling */
+.forecast-section {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.forecast-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.section-header h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* List Container */
+.list-container {
+    margin-top: 16px;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.list-item-info {
+    flex: 1;
+}
+
+.list-item-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.list-item-details {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.list-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-edit {
+    padding: 6px 12px;
+    font-size: 13px;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-delete {
+    padding: 6px 12px;
+    font-size: 13px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.inflation-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #fff3cd;
+    color: #997404;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
 main {
     display: grid;
     gap: 16px;
@@ -148,15 +349,63 @@ input[type="date"]:focus {
 }
 
 .config-display {
-    padding: 8px 12px;
-    font-size: 12px;
-    color: #495057;
+    margin-top: 12px;
+    padding: 12px;
     background: #f8f9fa;
-    border-top: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
 }
 
-.config-display strong {
-    font-weight: 600;
+/* Button Styling */
+.btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-large {
+    padding: 14px 32px;
+    font-size: 16px;
+}
+
+.btn-primary {
+    background: #0d6efd;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0b5ed7;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5c636a;
+}
+
+.btn-success {
+    background: #198754;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #157347;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #bb2d3b;
 }
 
 .ledger-table {
@@ -197,6 +446,52 @@ input[type="date"]:focus {
 .table-container {
     overflow-x: auto;
     max-height: 600px;
+}
+
+#events-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+#events-table th {
+    background: #e9ecef;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #adb5bd;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#events-table th:nth-child(4),
+#events-table th:nth-child(5),
+#events-table th:nth-child(6),
+#events-table th:nth-child(7) {
+    text-align: right;
+}
+
+#events-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#events-table .date {
+    font-family: "SF Mono", Monaco, "Courier New", monospace;
+    font-size: 12px;
+}
+
+#events-table td:nth-child(4),
+#events-table td:nth-child(5),
+#events-table td:nth-child(6),
+#events-table td:nth-child(7) {
+    text-align: right;
+    font-family: "SF Mono", Monaco, "Courier New", monospace;
+    font-variant-numeric: tabular-nums;
 }
 
 .config-table {
@@ -405,6 +700,7 @@ input[type="date"]:focus {
     }
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
     body {
         padding: 8px;
@@ -413,6 +709,16 @@ input[type="date"]:focus {
     
     header h1 {
         font-size: 18px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
     
     .config-table,
@@ -429,4 +735,26 @@ input[type="date"]:focus {
         width: 100px;
         font-size: 12px;
     }
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.empty-state-text {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.empty-state-hint {
+    font-size: 14px;
+    color: #adb5bd;
 }

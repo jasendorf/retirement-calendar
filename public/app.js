@@ -1,8 +1,111 @@
 const API_BASE = window.location.origin;
 
+// Tab switching function
+function switchTab(event, tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Deactivate all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // Activate selected tab button
+    event.target.classList.add('active');
+    
+    // Scroll to top when switching tabs
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Helper function to switch tabs programmatically
+function switchTabByName(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Deactivate all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // Activate selected tab button
+    document.querySelectorAll('.tab-button').forEach(button => {
+        if (button.textContent.trim().toLowerCase() === tabName) {
+            button.classList.add('active');
+        }
+    });
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Generate forecast and switch to forecast tab
+async function generateAndSwitchToForecast() {
+    const months = parseInt(document.getElementById('forecast-months').value);
+    
+    if (isNaN(months) || months < 1 || months > 120) {
+        alert('Please enter a valid number of months (1-120)');
+        return;
+    }
+    
+    try {
+        // Show loading indicator
+        const summaryContent = document.getElementById('summary-content');
+        summaryContent.innerHTML = '<div class="loading">Generating forecast...</div>';
+        
+        // Switch to forecast tab immediately
+        switchTabByName('forecast');
+        
+        // Generate forecast
+        const response = await fetch(`${API_BASE}/api/forecast?months=${months}`);
+        const forecast = await response.json();
+        
+        // Display results
+        displayForecastSummary(forecast.summary);
+        displayForecastEvents(forecast.events);
+        
+    } catch (error) {
+        alert(`Error generating forecast: ${error.message}`);
+        // Switch back to configuration tab on error
+        switchTabByName('configuration');
+    }
+}
+
+// Show empty state in forecast tab if no data
+function showForecastEmptyState() {
+    const summaryContent = document.getElementById('summary-content');
+    summaryContent.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <div class="empty-state-text">No forecast generated yet</div>
+            <div class="empty-state-hint">Configure your accounts and generate a forecast to see results here</div>
+            <button onclick="switchTabByName('configuration')" class="btn btn-primary" style="margin-top: 16px;">
+                Go to Configuration
+            </button>
+        </div>
+    `;
+    
+    document.getElementById('events-tbody').innerHTML = '';
+}
+
 // Load initial data when page loads
 document.addEventListener('DOMContentLoaded', () => {
     loadAllData();
+    
+    // Show empty state in forecast tab initially
+    showForecastEmptyState();
+    
+    // Ensure configuration tab is active
+    switchTabByName('configuration');
 });
 
 // Load all data
@@ -371,29 +474,7 @@ async function deleteExpense(id) {
 
 // Forecast functions
 async function generateForecast() {
-    const months = parseInt(document.getElementById('forecast-months').value);
-    
-    if (isNaN(months) || months < 1 || months > 120) {
-        alert('Please enter a valid number of months (1-120)');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_BASE}/api/forecast?months=${months}`);
-        const forecast = await response.json();
-        
-        displayForecastSummary(forecast.summary);
-        displayForecastEvents(forecast.events);
-        
-        // Show forecast sections
-        document.getElementById('forecast-summary').style.display = 'block';
-        document.getElementById('forecast-events').style.display = 'block';
-        
-        // Scroll to forecast
-        document.getElementById('forecast-summary').scrollIntoView({ behavior: 'smooth' });
-    } catch (error) {
-        alert(`Error generating forecast: ${error.message}`);
-    }
+    await generateAndSwitchToForecast();
 }
 
 function displayForecastSummary(summary) {
