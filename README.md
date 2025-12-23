@@ -16,15 +16,31 @@ A web-based application that helps forecast retirement financial spending, parti
 - **🐳 Docker Support**: Run in a container with persistent data storage
 - **💾 Persistent Storage**: SQLite database ensures your data is saved
 
-## Quick Start with Docker
+## Quick Start
 
-### Using Docker Compose (Recommended)
+### Local Development (Recommended)
+
+The easiest way to run the application:
 
 ```bash
 # Clone the repository
 git clone https://github.com/jasendorf/retirement-calendar.git
 cd retirement-calendar
 
+# Install dependencies
+npm install
+
+# Start the server
+npm start
+
+# Access the application at http://localhost:3000
+```
+
+## Docker Deployment (Optional)
+
+### Using Docker Compose
+
+```bash
 # Start the application
 docker-compose up -d
 
@@ -47,7 +63,7 @@ docker run -d \
 # Access the application at http://localhost:3000
 ```
 
-## Local Development
+## Installation
 
 ### Prerequisites
 
