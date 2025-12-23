@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Calendar - Financial Forecasting</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Retirement Calendar</h1>
+            <p>Forecast your retirement financial spending and savings withdrawals</p>
+        </header>
+
+        <main>
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="card">
+                    <h2>📊 Current Savings</h2>
+                    <div class="form-group">
+                        <label for="savings-amount">Total Savings ($)</label>
+                        <input type="number" id="savings-amount" placeholder="Enter total savings" step="0.01">
+                        <button onclick="updateSavings()" class="btn btn-primary">Update Savings</button>
+                    </div>
+                    <div id="current-savings" class="savings-display"></div>
+                </div>
+
+                <div class="card">
+                    <h2>💵 Monthly Income</h2>
+                    <div class="form-group">
+                        <label for="income-name">Income Name</label>
+                        <input type="text" id="income-name" placeholder="e.g., Social Security">
+                        
+                        <label for="income-amount">Amount ($)</label>
+                        <input type="number" id="income-amount" placeholder="0.00" step="0.01">
+                        
+                        <label for="income-day">Day of Month</label>
+                        <input type="number" id="income-day" placeholder="1-31" min="1" max="31">
+                        
+                        <button onclick="addIncome()" class="btn btn-success">Add Income</button>
+                    </div>
+                    <div id="income-list" class="list-container"></div>
+                </div>
+
+                <div class="card">
+                    <h2>💳 Monthly Expenses</h2>
+                    <div class="form-group">
+                        <label for="expense-name">Expense Name</label>
+                        <input type="text" id="expense-name" placeholder="e.g., Mortgage">
+                        
+                        <label for="expense-amount">Amount ($)</label>
+                        <input type="number" id="expense-amount" placeholder="0.00" step="0.01">
+                        
+                        <label for="expense-day">Day of Month</label>
+                        <input type="number" id="expense-day" placeholder="1-31" min="1" max="31">
+                        
+                        <button onclick="addExpense()" class="btn btn-danger">Add Expense</button>
+                    </div>
+                    <div id="expense-list" class="list-container"></div>
+                </div>
+            </section>
+
+            <!-- Forecast Section -->
+            <section class="forecast-section">
+                <div class="card">
+                    <h2>🔮 Generate Forecast</h2>
+                    <div class="form-group">
+                        <label for="forecast-months">Months to Forecast</label>
+                        <input type="number" id="forecast-months" value="12" min="1" max="120">
+                        <button onclick="generateForecast()" class="btn btn-primary">Generate Forecast</button>
+                    </div>
+                </div>
+
+                <div id="forecast-summary" class="card" style="display: none;">
+                    <h2>📈 Forecast Summary</h2>
+                    <div id="summary-content"></div>
+                </div>
+
+                <div id="forecast-events" class="card" style="display: none;">
+                    <h2>📅 Forecast Events</h2>
+                    <div class="table-container">
+                        <table id="events-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Balance After</th>
+                                    <th>Withdrawal</th>
+                                    <th>Savings Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
