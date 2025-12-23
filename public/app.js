@@ -74,6 +74,7 @@ async function updateAccountConfig() {
     const transferFrequencyDays = parseInt(document.getElementById('transfer-frequency').value);
     const minCheckingBalance = parseFloat(document.getElementById('min-checking').value);
     const annualReturnRate = parseFloat(document.getElementById('annual-return-rate').value);
+    const startDate = document.getElementById('start-date').value || null;
     
     if (isNaN(checkingBalance) || isNaN(savingsBalance)) {
         alert('Please enter valid account balances');
@@ -99,7 +100,8 @@ async function updateAccountConfig() {
                 savingsBalance,
                 transferFrequencyDays,
                 minCheckingBalance: isNaN(minCheckingBalance) ? 0 : minCheckingBalance,
-                annualReturnRate: isNaN(annualReturnRate) ? 0 : annualReturnRate
+                annualReturnRate: isNaN(annualReturnRate) ? 0 : annualReturnRate,
+                startDate
             })
         });
         
@@ -127,14 +129,26 @@ async function loadAccountConfig() {
         document.getElementById('min-checking').value = config?.min_checking_balance || 0;
         document.getElementById('annual-return-rate').value = config?.annual_return_rate || 0;
         
+        // Set start date - if not set, default to today
+        const startDateInput = document.getElementById('start-date');
+        if (config?.start_date) {
+            startDateInput.value = config.start_date;
+        } else {
+            // Set to today's date as default
+            const today = new Date();
+            startDateInput.value = today.toISOString().split('T')[0];
+        }
+        
         // Display current balances
         const display = document.getElementById('current-balances');
         if (config) {
+            const startDateDisplay = config.start_date ? formatDate(config.start_date) : 'Today';
             display.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
                     <div><strong>Checking:</strong> $${formatNumber(config.checking_balance || 0)}</div>
                     <div><strong>Savings:</strong> $${formatNumber(config.savings_balance || 0)}</div>
                     <div><strong>Return Rate:</strong> ${(config.annual_return_rate || 0).toFixed(1)}%</div>
+                    <div><strong>Start:</strong> ${startDateDisplay}</div>
                 </div>
             `;
         } else {
@@ -150,6 +164,7 @@ async function addIncome() {
     const name = document.getElementById('income-name').value.trim();
     const amount = parseFloat(document.getElementById('income-amount').value);
     const day_of_month = parseInt(document.getElementById('income-day').value);
+    const annual_increase_rate = parseFloat(document.getElementById('income-inflation').value) || 0;
     
     if (!name || isNaN(amount) || isNaN(day_of_month)) {
         alert('Please fill in all income fields');
@@ -161,11 +176,16 @@ async function addIncome() {
         return;
     }
     
+    if (annual_increase_rate < 0 || annual_increase_rate > 100) {
+        alert('Annual increase rate must be between 0% and 100%');
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_BASE}/api/income`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, amount, day_of_month })
+            body: JSON.stringify({ name, amount, day_of_month, annual_increase_rate })
         });
         
         if (response.ok) {
@@ -173,6 +193,7 @@ async function addIncome() {
             document.getElementById('income-name').value = '';
             document.getElementById('income-amount').value = '';
             document.getElementById('income-day').value = '';
+            document.getElementById('income-inflation').value = '0';
         } else {
             const error = await response.json();
             alert(`Error: ${error.error}`);
@@ -201,6 +222,7 @@ async function loadIncome() {
                         <th>Name</th>
                         <th class="amount">Amount</th>
                         <th>Day</th>
+                        <th>Inflation</th>
                         <th style="width: 60px;">Actions</th>
                     </tr>
                 </thead>
@@ -210,6 +232,7 @@ async function loadIncome() {
                             <td>${escapeHtml(income.name)}</td>
                             <td class="amount credit">$${formatNumber(income.amount)}</td>
                             <td>${income.day_of_month}</td>
+                            <td>${income.annual_increase_rate ? income.annual_increase_rate.toFixed(1) + '%' : '-'}</td>
                             <td><button class="btn-icon" onclick="deleteIncome(${income.id})" title="Delete">×</button></td>
                         </tr>
                     `).join('')}
@@ -246,6 +269,7 @@ async function addExpense() {
     const name = document.getElementById('expense-name').value.trim();
     const amount = parseFloat(document.getElementById('expense-amount').value);
     const day_of_month = parseInt(document.getElementById('expense-day').value);
+    const annual_increase_rate = parseFloat(document.getElementById('expense-inflation').value) || 0;
     
     if (!name || isNaN(amount) || isNaN(day_of_month)) {
         alert('Please fill in all expense fields');
@@ -257,11 +281,16 @@ async function addExpense() {
         return;
     }
     
+    if (annual_increase_rate < 0 || annual_increase_rate > 100) {
+        alert('Annual increase rate must be between 0% and 100%');
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_BASE}/api/expenses`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, amount, day_of_month })
+            body: JSON.stringify({ name, amount, day_of_month, annual_increase_rate })
         });
         
         if (response.ok) {
@@ -269,6 +298,7 @@ async function addExpense() {
             document.getElementById('expense-name').value = '';
             document.getElementById('expense-amount').value = '';
             document.getElementById('expense-day').value = '';
+            document.getElementById('expense-inflation').value = '0';
         } else {
             const error = await response.json();
             alert(`Error: ${error.error}`);
@@ -297,6 +327,7 @@ async function loadExpenses() {
                         <th>Name</th>
                         <th class="amount">Amount</th>
                         <th>Day</th>
+                        <th>Inflation</th>
                         <th style="width: 60px;">Actions</th>
                     </tr>
                 </thead>
@@ -306,6 +337,7 @@ async function loadExpenses() {
                             <td>${escapeHtml(expense.name)}</td>
                             <td class="amount debit">${formatAccountingNumber(expense.amount, true)}</td>
                             <td>${expense.day_of_month}</td>
+                            <td>${expense.annual_increase_rate ? expense.annual_increase_rate.toFixed(1) + '%' : '-'}</td>
                             <td><button class="btn-icon" onclick="deleteExpense(${expense.id})" title="Delete">×</button></td>
                         </tr>
                     `).join('')}
@@ -440,6 +472,7 @@ function displayForecastEvents(events) {
         const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
         const isTransfer = event.transferAmount && event.transferAmount > 0;
         const isInvestmentReturn = event.type === 'investment_return';
+        const isInflationAdjustment = event.type === 'expense_increase' || event.type === 'income_increase';
         
         let specialClass = '';
         let typeClass = '';
@@ -453,6 +486,10 @@ function displayForecastEvents(events) {
             specialClass = 'return-row';
             typeClass = 'type-investment_return';
             typeDisplay = 'Return';
+        } else if (isInflationAdjustment) {
+            specialClass = 'inflation-row';
+            typeClass = 'type-inflation';
+            typeDisplay = event.type === 'expense_increase' ? 'Exp +' : 'Inc +';
         } else if (event.type === 'income') {
             typeClass = 'type-income';
             typeDisplay = 'Income';
@@ -464,13 +501,47 @@ function displayForecastEvents(events) {
         const isDebit = event.amount < 0;
         const amountClass = isDebit ? 'debit' : 'credit';
         
+        // Handle inflation adjustment display
+        if (isInflationAdjustment) {
+            return `
+                <tr class="${rowClass} ${specialClass}">
+                    <td class="date">${formatDate(event.date)}</td>
+                    <td class="${typeClass}">${typeDisplay}</td>
+                    <td>${escapeHtml(event.name)}</td>
+                    <td class="amount" style="font-size: 11px;">
+                        $${formatNumber(event.oldAmount)} → $${formatNumber(event.newAmount)} (+${event.rate.toFixed(1)}%)
+                    </td>
+                    <td class="amount">$${formatNumber(event.checkingBalanceAfter || 0)}</td>
+                    <td class="amount">$${formatNumber(event.savingsBalanceAfter || 0)}</td>
+                    <td class="amount">-</td>
+                </tr>
+            `;
+        }
+        
+        // Regular event display
+        let amountDisplay = '';
+        if (Math.abs(event.amount) > 0) {
+            if (isDebit) {
+                amountDisplay = formatAccountingNumber(event.amount, true);
+            } else {
+                amountDisplay = '$' + formatNumber(event.amount);
+            }
+            
+            // Add inflation indicator if this event has been inflated
+            if (event.inflationApplied && (event.type === 'expense' || event.type === 'income')) {
+                amountDisplay += ' <span style="color: #ff9800; font-size: 11px;" title="Inflated from $' + formatNumber(event.baseAmount) + '">*</span>';
+            }
+        } else {
+            amountDisplay = '-';
+        }
+        
         return `
             <tr class="${rowClass} ${specialClass}">
                 <td class="date">${formatDate(event.date)}</td>
                 <td class="${typeClass}">${typeDisplay}</td>
                 <td>${escapeHtml(event.name)}</td>
                 <td class="amount ${amountClass}">
-                    ${isDebit ? formatAccountingNumber(event.amount, true) : '$' + formatNumber(event.amount)}
+                    ${amountDisplay}
                 </td>
                 <td class="amount">$${formatNumber(event.checkingBalanceAfter || 0)}</td>
                 <td class="amount">$${formatNumber(event.savingsBalanceAfter || 0)}</td>

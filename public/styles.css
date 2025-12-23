@@ -86,7 +86,8 @@ h3.ledger-header {
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+input[type="date"] {
     padding: 4px 8px;
     font-size: 13px;
     border: 1px solid #ced4da;
@@ -105,8 +106,13 @@ input[type="text"] {
     width: 200px;
 }
 
+input[type="date"] {
+    width: 150px;
+}
+
 input[type="text"]:focus,
-input[type="number"]:focus {
+input[type="number"]:focus,
+input[type="date"]:focus {
     outline: none;
     border-color: #0d6efd;
 }
@@ -287,6 +293,12 @@ input[type="number"]:focus {
     font-weight: 600;
 }
 
+.type-inflation {
+    color: #ff9800;
+    font-weight: 600;
+    font-size: 12px;
+}
+
 .amount.credit,
 .amount.positive {
     color: #198754;
@@ -310,6 +322,12 @@ input[type="number"]:focus {
 .return-row {
     background: #d1e7dd !important;
     border-left: 3px solid #198754;
+}
+
+.inflation-row {
+    background: #fff4e6 !important;
+    border-left: 3px solid #ff9800;
+    font-size: 12px;
 }
 
 .summary-table {
