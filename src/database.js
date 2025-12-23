@@ -65,7 +65,7 @@ class Database {
         // Table for account configuration
         this.db.run(`
           CREATE TABLE IF NOT EXISTS account_config (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY CHECK (id = 1),
             checking_balance REAL NOT NULL DEFAULT 0,
             savings_balance REAL NOT NULL DEFAULT 0,
             transfer_frequency_days INTEGER NOT NULL DEFAULT 30,
@@ -192,7 +192,7 @@ class Database {
   setAccountConfig(checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance) {
     return new Promise((resolve, reject) => {
       // First, check if a config record exists
-      this.db.get('SELECT * FROM account_config ORDER BY id DESC LIMIT 1', (err, row) => {
+      this.db.get('SELECT * FROM account_config WHERE id = 1', (err, row) => {
         if (err) {
           reject(err);
         } else if (row) {
@@ -201,12 +201,12 @@ class Database {
             `UPDATE account_config 
              SET checking_balance = ?, savings_balance = ?, transfer_frequency_days = ?, 
                  min_checking_balance = ?, updated_at = CURRENT_TIMESTAMP 
-             WHERE id = ?`,
-            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, row.id],
+             WHERE id = 1`,
+            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance],
             (err) => {
               if (err) reject(err);
               else resolve({
-                id: row.id,
+                id: 1,
                 checking_balance: checkingBalance,
                 savings_balance: savingsBalance,
                 transfer_frequency_days: transferFrequencyDays,
@@ -215,16 +215,16 @@ class Database {
             }
           );
         } else {
-          // Insert new record
+          // Insert new record with id=1
           this.db.run(
             `INSERT INTO account_config 
-             (checking_balance, savings_balance, transfer_frequency_days, min_checking_balance) 
-             VALUES (?, ?, ?, ?)`,
+             (id, checking_balance, savings_balance, transfer_frequency_days, min_checking_balance) 
+             VALUES (1, ?, ?, ?, ?)`,
             [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance],
             function(err) {
               if (err) reject(err);
               else resolve({
-                id: this.lastID,
+                id: 1,
                 checking_balance: checkingBalance,
                 savings_balance: savingsBalance,
                 transfer_frequency_days: transferFrequencyDays,
@@ -239,14 +239,9 @@ class Database {
 
   getAccountConfig() {
     return new Promise((resolve, reject) => {
-      this.db.get('SELECT * FROM account_config ORDER BY id DESC LIMIT 1', (err, row) => {
+      this.db.get('SELECT * FROM account_config WHERE id = 1', (err, row) => {
         if (err) reject(err);
-        else resolve(row || {
-          checking_balance: 0,
-          savings_balance: 0,
-          transfer_frequency_days: 30,
-          min_checking_balance: 0
-        });
+        else resolve(row || null);
       });
     });
   }

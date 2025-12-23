@@ -124,6 +124,16 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
   const monthlyNetCashFlow = (income.reduce((sum, inc) => sum + inc.amount, 0) - 
                               expenses.reduce((sum, exp) => sum + exp.amount, 0));
   
+  // Find when savings are depleted (goes from positive to zero)
+  let savingsDepletionMonth = null;
+  for (let i = 0; i < events.length; i++) {
+    if (events[i].savingsBalanceAfter <= 0 && 
+        (i === 0 ? savingsBalance > 0 : events[i].savingsBalanceBefore > 0)) {
+      savingsDepletionMonth = events[i].date;
+      break;
+    }
+  }
+  
   return {
     events,
     summary: {
@@ -136,7 +146,7 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
       endingCheckingBalance: currentCheckingBalance,
       endingSavingsBalance: currentSavingsBalance,
       monthsForecasted: monthsToForecast,
-      savingsDepletionMonth: events.find(e => e.savingsBalanceAfter <= 0 && savingsBalance > 0)?.date || null
+      savingsDepletionMonth
     }
   };
 }

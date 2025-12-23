@@ -46,12 +46,12 @@ app.get('/api/data', async (req, res) => {
       expenses,
       income,
       savings: savings.total_amount || 0,
-      accountConfig: {
+      accountConfig: accountConfig ? {
         checkingBalance: accountConfig.checking_balance || 0,
         savingsBalance: accountConfig.savings_balance || 0,
         transferFrequencyDays: accountConfig.transfer_frequency_days || 30,
         minCheckingBalance: accountConfig.min_checking_balance || 0
-      }
+      } : null
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -204,7 +204,7 @@ app.get('/api/forecast', async (req, res) => {
     
     // Use new account config if available, otherwise fall back to old savings
     let forecastConfig;
-    if (accountConfig && accountConfig.id) {
+    if (accountConfig) {
       forecastConfig = {
         checkingBalance: accountConfig.checking_balance || 0,
         savingsBalance: accountConfig.savings_balance || 0,

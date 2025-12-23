@@ -101,22 +101,31 @@ async function loadAccountConfig() {
         const config = await response.json();
         
         // Populate form fields
-        document.getElementById('checking-balance').value = config.checking_balance || 0;
-        document.getElementById('savings-balance').value = config.savings_balance || 0;
-        document.getElementById('transfer-frequency').value = config.transfer_frequency_days || 30;
-        document.getElementById('min-checking').value = config.min_checking_balance || 0;
+        document.getElementById('checking-balance').value = config?.checking_balance || 0;
+        document.getElementById('savings-balance').value = config?.savings_balance || 0;
+        document.getElementById('transfer-frequency').value = config?.transfer_frequency_days || 30;
+        document.getElementById('min-checking').value = config?.min_checking_balance || 0;
         
         // Display current balances
         const display = document.getElementById('current-balances');
-        display.innerHTML = `
-            <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
-                <strong>Current Configuration:</strong><br>
-                Checking: $${formatNumber(config.checking_balance || 0)}<br>
-                Savings: $${formatNumber(config.savings_balance || 0)}<br>
-                Transfer Frequency: ${config.transfer_frequency_days || 30} days<br>
-                Min Checking Balance: $${formatNumber(config.min_checking_balance || 0)}
-            </div>
-        `;
+        if (config) {
+            display.innerHTML = `
+                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                    <strong>Current Configuration:</strong><br>
+                    Checking: $${formatNumber(config.checking_balance || 0)}<br>
+                    Savings: $${formatNumber(config.savings_balance || 0)}<br>
+                    Transfer Frequency: ${config.transfer_frequency_days || 30} days<br>
+                    Min Checking Balance: $${formatNumber(config.min_checking_balance || 0)}
+                </div>
+            `;
+        } else {
+            display.innerHTML = `
+                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                    <strong>No configuration set</strong><br>
+                    Please enter your account balances above
+                </div>
+            `;
+        }
     } catch (error) {
         console.error('Error loading account config:', error);
     }
