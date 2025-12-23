@@ -77,12 +77,29 @@ class Database {
           if (err) {
             reject(err);
           } else {
-            // Run migration to add annual_return_rate column if it doesn't exist
-            // Use nullable column to avoid issues with existing databases
+            // Run migrations to add new columns if they don't exist
             this.db.run(`
               ALTER TABLE account_config ADD COLUMN annual_return_rate REAL DEFAULT 0
             `, (err) => {
-              // Ignore error if column already exists (duplicate column name)
+              // Ignore error if column already exists
+            });
+            
+            this.db.run(`
+              ALTER TABLE account_config ADD COLUMN start_date TEXT DEFAULT NULL
+            `, (err) => {
+              // Ignore error if column already exists
+            });
+            
+            this.db.run(`
+              ALTER TABLE expenses ADD COLUMN annual_increase_rate REAL DEFAULT 0
+            `, (err) => {
+              // Ignore error if column already exists
+            });
+            
+            this.db.run(`
+              ALTER TABLE income ADD COLUMN annual_increase_rate REAL DEFAULT 0
+            `, (err) => {
+              // Ignore error if column already exists
               resolve();
             });
           }
@@ -92,14 +109,14 @@ class Database {
   }
 
   // Expense operations
-  addExpense(name, amount, dayOfMonth) {
+  addExpense(name, amount, dayOfMonth, annualIncreaseRate = 0) {
     return new Promise((resolve, reject) => {
       this.db.run(
-        'INSERT INTO expenses (name, amount, day_of_month) VALUES (?, ?, ?)',
-        [name, amount, dayOfMonth],
+        'INSERT INTO expenses (name, amount, day_of_month, annual_increase_rate) VALUES (?, ?, ?, ?)',
+        [name, amount, dayOfMonth, annualIncreaseRate],
         function(err) {
           if (err) reject(err);
-          else resolve({ id: this.lastID, name, amount, day_of_month: dayOfMonth });
+          else resolve({ id: this.lastID, name, amount, day_of_month: dayOfMonth, annual_increase_rate: annualIncreaseRate });
         }
       );
     });
@@ -124,14 +141,14 @@ class Database {
   }
 
   // Income operations
-  addIncome(name, amount, dayOfMonth) {
+  addIncome(name, amount, dayOfMonth, annualIncreaseRate = 0) {
     return new Promise((resolve, reject) => {
       this.db.run(
-        'INSERT INTO income (name, amount, day_of_month) VALUES (?, ?, ?)',
-        [name, amount, dayOfMonth],
+        'INSERT INTO income (name, amount, day_of_month, annual_increase_rate) VALUES (?, ?, ?, ?)',
+        [name, amount, dayOfMonth, annualIncreaseRate],
         function(err) {
           if (err) reject(err);
-          else resolve({ id: this.lastID, name, amount, day_of_month: dayOfMonth });
+          else resolve({ id: this.lastID, name, amount, day_of_month: dayOfMonth, annual_increase_rate: annualIncreaseRate });
         }
       );
     });
@@ -197,7 +214,7 @@ class Database {
   }
 
   // Account configuration operations
-  setAccountConfig(checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate) {
+  setAccountConfig(checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate, startDate = null) {
     return new Promise((resolve, reject) => {
       // First, check if a config record exists
       this.db.get('SELECT * FROM account_config WHERE id = 1', (err, row) => {
@@ -208,9 +225,9 @@ class Database {
           this.db.run(
             `UPDATE account_config 
              SET checking_balance = ?, savings_balance = ?, transfer_frequency_days = ?, 
-                 min_checking_balance = ?, annual_return_rate = ?, updated_at = CURRENT_TIMESTAMP 
+                 min_checking_balance = ?, annual_return_rate = ?, start_date = ?, updated_at = CURRENT_TIMESTAMP 
              WHERE id = 1`,
-            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate || 0],
+            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate || 0, startDate],
             (err) => {
               if (err) reject(err);
               else resolve({
@@ -219,7 +236,8 @@ class Database {
                 savings_balance: savingsBalance,
                 transfer_frequency_days: transferFrequencyDays,
                 min_checking_balance: minCheckingBalance,
-                annual_return_rate: annualReturnRate || 0
+                annual_return_rate: annualReturnRate || 0,
+                start_date: startDate
               });
             }
           );
@@ -227,9 +245,9 @@ class Database {
           // Insert new record with id=1
           this.db.run(
             `INSERT INTO account_config 
-             (id, checking_balance, savings_balance, transfer_frequency_days, min_checking_balance, annual_return_rate) 
-             VALUES (1, ?, ?, ?, ?, ?)`,
-            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate || 0],
+             (id, checking_balance, savings_balance, transfer_frequency_days, min_checking_balance, annual_return_rate, start_date) 
+             VALUES (1, ?, ?, ?, ?, ?, ?)`,
+            [checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate || 0, startDate],
             function(err) {
               if (err) reject(err);
               else resolve({
@@ -238,7 +256,8 @@ class Database {
                 savings_balance: savingsBalance,
                 transfer_frequency_days: transferFrequencyDays,
                 min_checking_balance: minCheckingBalance,
-                annual_return_rate: annualReturnRate || 0
+                annual_return_rate: annualReturnRate || 0,
+                start_date: startDate
               });
             }
           );

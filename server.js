@@ -51,7 +51,8 @@ app.get('/api/data', async (req, res) => {
         savingsBalance: accountConfig.savings_balance || 0,
         transferFrequencyDays: accountConfig.transfer_frequency_days || 30,
         minCheckingBalance: accountConfig.min_checking_balance || 0,
-        annualReturnRate: accountConfig.annual_return_rate || 0
+        annualReturnRate: accountConfig.annual_return_rate || 0,
+        startDate: accountConfig.start_date || null
       } : null
     });
   } catch (error) {
@@ -62,7 +63,7 @@ app.get('/api/data', async (req, res) => {
 // Expense routes
 app.post('/api/expenses', async (req, res) => {
   try {
-    const { name, amount, day_of_month } = req.body;
+    const { name, amount, day_of_month, annual_increase_rate } = req.body;
     
     if (!name || !amount || !day_of_month) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -72,7 +73,7 @@ app.post('/api/expenses', async (req, res) => {
       return res.status(400).json({ error: 'Day of month must be between 1 and 31' });
     }
     
-    const expense = await database.addExpense(name, amount, day_of_month);
+    const expense = await database.addExpense(name, amount, day_of_month, annual_increase_rate || 0);
     res.status(201).json(expense);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -100,7 +101,7 @@ app.delete('/api/expenses/:id', async (req, res) => {
 // Income routes
 app.post('/api/income', async (req, res) => {
   try {
-    const { name, amount, day_of_month } = req.body;
+    const { name, amount, day_of_month, annual_increase_rate } = req.body;
     
     if (!name || !amount || !day_of_month) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -110,7 +111,7 @@ app.post('/api/income', async (req, res) => {
       return res.status(400).json({ error: 'Day of month must be between 1 and 31' });
     }
     
-    const income = await database.addIncome(name, amount, day_of_month);
+    const income = await database.addIncome(name, amount, day_of_month, annual_increase_rate || 0);
     res.status(201).json(income);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -163,7 +164,7 @@ app.get('/api/savings', async (req, res) => {
 // Account configuration routes
 app.post('/api/account-config', async (req, res) => {
   try {
-    const { checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate } = req.body;
+    const { checkingBalance, savingsBalance, transferFrequencyDays, minCheckingBalance, annualReturnRate, startDate } = req.body;
     
     if (checkingBalance === undefined || savingsBalance === undefined) {
       return res.status(400).json({ error: 'Checking and savings balances are required' });
@@ -174,7 +175,8 @@ app.post('/api/account-config', async (req, res) => {
       savingsBalance,
       transferFrequencyDays || 30,
       minCheckingBalance || 0,
-      annualReturnRate || 0
+      annualReturnRate || 0,
+      startDate || null
     );
     res.json(config);
   } catch (error) {
@@ -212,7 +214,8 @@ app.get('/api/forecast', async (req, res) => {
         savingsBalance: accountConfig.savings_balance || 0,
         transferFrequencyDays: accountConfig.transfer_frequency_days || 30,
         minCheckingBalance: accountConfig.min_checking_balance || 0,
-        annualReturnRate: accountConfig.annual_return_rate || 0
+        annualReturnRate: accountConfig.annual_return_rate || 0,
+        startDate: accountConfig.start_date || null
       };
     } else {
       // Fallback to old savings model for backward compatibility
