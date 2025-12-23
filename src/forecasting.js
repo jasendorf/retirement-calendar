@@ -44,13 +44,15 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
   
   // Track adjusted amounts for each expense/income (start with base amounts)
   const expenseAmounts = {};
-  expenses.forEach(exp => {
-    expenseAmounts[exp.id] = exp.amount;
+  expenses.forEach((exp, index) => {
+    const key = exp.id !== undefined ? exp.id : `expense_${index}`;
+    expenseAmounts[key] = exp.amount;
   });
   
   const incomeAmounts = {};
-  income.forEach(inc => {
-    incomeAmounts[inc.id] = inc.amount;
+  income.forEach((inc, index) => {
+    const key = inc.id !== undefined ? inc.id : `income_${index}`;
+    incomeAmounts[key] = inc.amount;
   });
   
   // Create a list of all events (income and expenses) for the forecast period
@@ -67,11 +69,12 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     // If starting a new year (not year 0), apply inflation at the beginning of the year
     if (month > 0 && month % 12 === 0) {
       // Apply annual increase to all expenses
-      expenses.forEach(exp => {
+      expenses.forEach((exp, index) => {
         if (exp.annual_increase_rate > 0) {
-          const oldAmount = expenseAmounts[exp.id];
+          const key = exp.id !== undefined ? exp.id : `expense_${index}`;
+          const oldAmount = expenseAmounts[key];
           const multiplier = 1 + (exp.annual_increase_rate / 100);
-          expenseAmounts[exp.id] *= multiplier;
+          expenseAmounts[key] *= multiplier;
           
           // Add an event showing the increase
           allEvents.push({
@@ -80,7 +83,7 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
             name: `${exp.name} - Annual Increase`,
             amount: 0,
             oldAmount: oldAmount,
-            newAmount: expenseAmounts[exp.id],
+            newAmount: expenseAmounts[key],
             rate: exp.annual_increase_rate,
             day_of_month: 1,
             isInflationAdjustment: true
@@ -89,11 +92,12 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
       });
       
       // Apply annual increase to all income
-      income.forEach(inc => {
+      income.forEach((inc, index) => {
         if (inc.annual_increase_rate > 0) {
-          const oldAmount = incomeAmounts[inc.id];
+          const key = inc.id !== undefined ? inc.id : `income_${index}`;
+          const oldAmount = incomeAmounts[key];
           const multiplier = 1 + (inc.annual_increase_rate / 100);
-          incomeAmounts[inc.id] *= multiplier;
+          incomeAmounts[key] *= multiplier;
           
           allEvents.push({
             date: new Date(currentYear, currentMonth, 1),
@@ -101,7 +105,7 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
             name: `${inc.name} - Annual Increase`,
             amount: 0,
             oldAmount: oldAmount,
-            newAmount: incomeAmounts[inc.id],
+            newAmount: incomeAmounts[key],
             rate: inc.annual_increase_rate,
             day_of_month: 1,
             isInflationAdjustment: true
@@ -124,7 +128,7 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     }
     
     // Add expenses for this month using adjusted amounts
-    expenses.forEach(expense => {
+    expenses.forEach((expense, index) => {
       const eventDate = new Date(currentYear, currentMonth, expense.day_of_month);
       
       // For the first month, only include events on or after forecastStartDate
@@ -132,20 +136,21 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
         return; // Skip this event
       }
       
+      const key = expense.id !== undefined ? expense.id : `expense_${index}`;
       allEvents.push({
         date: eventDate,
         type: 'expense',
         name: expense.name,
-        amount: -Math.abs(expenseAmounts[expense.id]), // Ensure expenses are negative
+        amount: -Math.abs(expenseAmounts[key]), // Ensure expenses are negative
         baseAmount: expense.amount,
-        currentAmount: expenseAmounts[expense.id],
-        inflationApplied: expenseAmounts[expense.id] !== expense.amount,
+        currentAmount: expenseAmounts[key],
+        inflationApplied: expenseAmounts[key] !== expense.amount,
         day_of_month: expense.day_of_month
       });
     });
     
     // Add income for this month using adjusted amounts
-    income.forEach(inc => {
+    income.forEach((inc, index) => {
       const eventDate = new Date(currentYear, currentMonth, inc.day_of_month);
       
       // For the first month, only include events on or after forecastStartDate
@@ -153,14 +158,15 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
         return; // Skip this event
       }
       
+      const key = inc.id !== undefined ? inc.id : `income_${index}`;
       allEvents.push({
         date: eventDate,
         type: 'income',
         name: inc.name,
-        amount: Math.abs(incomeAmounts[inc.id]), // Ensure income is positive
+        amount: Math.abs(incomeAmounts[key]), // Ensure income is positive
         baseAmount: inc.amount,
-        currentAmount: incomeAmounts[inc.id],
-        inflationApplied: incomeAmounts[inc.id] !== inc.amount,
+        currentAmount: incomeAmounts[key],
+        inflationApplied: incomeAmounts[key] !== inc.amount,
         day_of_month: inc.day_of_month
       });
     });
