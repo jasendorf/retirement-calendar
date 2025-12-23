@@ -109,7 +109,8 @@ function generateForecast(expenses, income, totalSavingsOrConfig, monthsToForeca
     if (event.isInvestmentReturn) {
       // Only calculate if there's a savings balance
       if (currentSavingsBalance > 0) {
-        const monthlyReturn = currentSavingsBalance * (annualReturnRate / 100 / 12);
+        const monthlyReturnRate = annualReturnRate / 100 / 12;
+        const monthlyReturn = currentSavingsBalance * monthlyReturnRate;
         currentSavingsBalance += monthlyReturn;
         totalInvestmentReturns += monthlyReturn;
         

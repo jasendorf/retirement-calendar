@@ -72,6 +72,11 @@ async function updateAccountConfig() {
         return;
     }
     
+    if (!isNaN(annualReturnRate) && (annualReturnRate < 0 || annualReturnRate > 100)) {
+        alert('Please enter a valid annual return rate between 0% and 100%');
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_BASE}/api/account-config`, {
             method: 'POST',
