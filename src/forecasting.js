@@ -95,8 +95,7 @@ function generateForecast(expenses, income, totalSavings, monthsToForecast = 12)
       savingsRemaining: totalSavings - totalWithdrawals,
       projectedEndBalance: currentBalance,
       monthsForecasted: monthsToForecast,
-      savingsDepletionMonth: totalSavings - totalWithdrawals <= 0 ? 
-        events.find(e => e.savingsRemaining <= 0)?.date : null
+      savingsDepletionMonth: events.find(e => e.savingsRemaining <= 0)?.date || null
     }
   };
 }

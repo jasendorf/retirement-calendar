@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --production || true
+RUN npm install --production
 
 # Copy application files
 COPY server.js ./
